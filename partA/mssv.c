@@ -6,7 +6,7 @@ int main (int argc, char* argv[])
 {
 
     // Rename command line parameters
-    char* input = argv[1];
+    char* inputFile = argv[1];
     int maxDelay = atoi(argv[2]);
 
     // Validation
@@ -25,6 +25,8 @@ int main (int argc, char* argv[])
     }
 
     // Variables
+    int readStatus;
+
     // File Descriptors
     int buff1FD, buff2FD, counterFD;
 
@@ -59,6 +61,7 @@ int main (int argc, char* argv[])
     truncStat2 = ftruncate(buff2FD, buff2Sz);
     truncStat3 = ftruncate(counterFD, countSz);
 
+    printf("%d %d %d\n", truncStat1, truncStat2, truncStat3);
     if (truncStat1 == -1 || truncStat2 == -1 || truncStat3 == -1)
     {
         fprintf( stderr, "Error setting size of shared memory\n" );
@@ -70,6 +73,20 @@ int main (int argc, char* argv[])
     buff2Ptr = (int*) mmap(NULL, buff2Sz, PROT_READ | PROT_WRITE, MAP_SHARED, buff2FD, 0);
     countPtr = (int*) mmap(NULL, countSz, PROT_READ | PROT_WRITE, MAP_SHARED, counterFD, 0);
 
-
+    // Initialise counter
     *countPtr = 0;
+
+    // Read input file
+    readStatus = readFile(inputFile, buff2Ptr);
+
+    if (readStatus != 0)
+    {
+        printf("Error reading contents of file");
+        return -1;
+    }
+
+    // shm_unlink("buffer1");
+    // shm_unlink("buffer2");
+    // shm_unlink("counter");
+
 }

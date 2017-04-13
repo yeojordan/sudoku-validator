@@ -5,8 +5,8 @@
 
 # MAKE VARIABLES
 EXEC1 = mssv
-OBJ1 = mssv.o #fileIO.o
-CFLAGS = -Wall -Wextra -std=c99 -lrt -pthread -D _XOPEN_SOURCE=500
+OBJ1 = mssv.o fileIO.o
+CFLAGS = -Wall  -std=c99  -pthread -D _XOPEN_SOURCE=500 #-Wextra -lrt
 CC = gcc
 
 
@@ -17,8 +17,8 @@ $(EXEC1) : $(OBJ1)
 mssv.o : mssv.c mssv.h #fileIO.h
 	$(CC) -c mssv.c $(CFLAGS)
 
-#fileIO.o : fileIO.c fileIO.h
-#	$(CC) -c fileIO.c $(CFLAGS)
+fileIO.o : fileIO.c fileIO.h
+	$(CC) -c fileIO.c $(CFLAGS)
 
 clean:
 	rm -f $(EXEC1) $(OBJ1)

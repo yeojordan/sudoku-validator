@@ -88,28 +88,46 @@ int main (int argc, char* argv[])
     }
 
 
-// Check rows
-for (i = 0; i < 9; i++)
-{
-    printf("Checking row: %d\n", i+1);
-    row = checkRow(buff2Ptr, numbers, i, 9 );
-    if ( row != 0)
+    // Check rows
+    for (i = 0; i < 9; i++)
     {
-        // Write to log file
-        // Add method here
+        printf("Checking row: %d\n", i+1);
+        row = checkRow(buff2Ptr, numbers, i, 9 );
+        if ( row != 0)
+        {
+            // Write to log file
+            // Add method here
+        }
+        else
+        {
+            // Increment valid sub-grid counter
+            (*countPtr)++;
+            //printf("%d\n", *countPtr);
+        }
+        resetArray(numbers);
     }
-    else
+    printf("%d\n", *countPtr);
+
+    // Check Columns
+    for (i = 0; i < 9; i++)
     {
+        printf("Checking column: %d\n", i+1);
+        row = checkCol(buff2Ptr, numbers, 9, i+1 );
+        if ( row != 0)
+        {
+            // Write to log file
+            // Add method here
+        }
+        else
+        {
 
-        // Increment valid sub-grid counter
-        (*countPtr)++;
-        //printf("%d\n", *countPtr);
+            // Increment valid sub-grid counter
+            (*countPtr)++;
+            //printf("%d\n", *countPtr);
+        }
+        resetArray(numbers);
     }
-    resetArray(numbers);
-}
-printf("%d\n", *countPtr);
-
-
+    printf("%d\n", *countPtr);
 
 
     // shm_unlink("buffer1");
@@ -118,8 +136,13 @@ printf("%d\n", *countPtr);
 
 }
 
+
+
+/******************************************************************************/
+
+
 // Row is zero based
-// Cols starts from 0
+// Cols starts from 1
 int checkRow(int* matrix, int numbers[], int rows, int cols)
 {
     int i,j;
@@ -150,6 +173,40 @@ int checkRow(int* matrix, int numbers[], int rows, int cols)
     //printf("Valid Row: %d\n", rows+1);
     return status;
 }
+
+// Rows start from 1
+// Columns start from 1
+int checkCol(int* matrix, int numbers[], int rows, int cols)
+{
+    int i,j;
+    int val;
+    int status = 0;
+    for ( i = 0; i < rows; i++)
+    {
+        // Obtain the value in buffer2
+        val = matrix[rows*i+(cols-1)];
+        printf("%d\n", val);
+        // Increment numbers for each occurrence
+        numbers[val-1]++;
+    }
+
+    // If column is invalid
+    for ( j = 0; j < 9; j++ )
+    {
+        if ( numbers[j] != 1)
+        {
+            //printf("Invalid Row: %d\n", rows+1);
+            return (cols);
+            //status = rows + 1;
+        }
+        //numbers[j] = 0;
+    }
+
+
+    return status;
+}
+
+
 
 void resetArray(int numbers[])
 {

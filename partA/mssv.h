@@ -11,4 +11,5 @@
 #include "fileIO.h"
 
 int checkRow(int* matrix, int numbers[], int rows, int cols);
+int checkCol(int* matrix, int numbers[], int rows, int cols);
 void resetArray(int numbers[]);

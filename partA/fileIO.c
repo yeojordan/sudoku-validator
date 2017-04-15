@@ -2,10 +2,10 @@
 #include "fileIO.h"
 
 
-int readFile(char* inputFile, int* buffer)
+int readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols])
 {
     FILE* inStrm;
-    int rowOff, i, j;
+    int rowOff, i, j, val;
 
     inStrm = fopen(inputFile, "r");
 
@@ -14,14 +14,15 @@ int readFile(char* inputFile, int* buffer)
         perror("Error opening file for reading\n");
         return -1;
     }
-
-    for( i = 0; i < 9; i++ )
+    printf("%d, %d\n", rows, cols);
+    for( i = 0; i < rows; i++ )
     {
-        rowOff = i * 9;
-        for ( j = 0; j < 9; j++ )
+
+        for ( j = 0; j < cols; j++ )
         {
-            fscanf( inStrm, "%d", &buffer[rowOff + j] );
-                    printf("%d ", buffer[rowOff + j]);
+            fscanf( inStrm, "%d", &(*(buffer))[i][j] );
+
+                    printf("%d ", (*buffer)[i][j]);
         }
         printf("\n");
     }

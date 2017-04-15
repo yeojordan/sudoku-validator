@@ -1,6 +1,6 @@
 
 #include "mssv.h"
-
+#define NINE 9
 
 int main (int argc, char* argv[])
 {
@@ -39,7 +39,7 @@ int main (int argc, char* argv[])
 
     // Shared memory pointers
     int* buff1Ptr;
-    int* buff2Ptr;
+    int (*buff2Ptr)[NINE][NINE];
     int* countPtr;
 
     // Matrix
@@ -72,14 +72,14 @@ int main (int argc, char* argv[])
 
     // Memory mapping
     buff1Ptr = (int*) mmap(NULL, buff1Sz, PROT_READ | PROT_WRITE, MAP_SHARED, buff1FD, 0);
-    buff2Ptr = (int*) mmap(NULL, buff2Sz, PROT_READ | PROT_WRITE, MAP_SHARED, buff2FD, 0);
+    buff2Ptr = mmap(NULL, buff2Sz, PROT_READ | PROT_WRITE, MAP_SHARED, buff2FD, 0);
     countPtr = (int*) mmap(NULL, countSz, PROT_READ | PROT_WRITE, MAP_SHARED, counterFD, 0);
 
     // Initialise counter
     *countPtr = 0;
 
     // Read input file
-    readStatus = readFile(inputFile, buff2Ptr);
+    readStatus = readFile(inputFile, NINE, NINE, buff2Ptr);
 
     if (readStatus != 0)
     {
@@ -87,7 +87,14 @@ int main (int argc, char* argv[])
         return -1;
     }
 
+    munmap(buff1Ptr, buff1Sz);
+    munmap(buff2Ptr, buff2Sz);
+    munmap(countPtr, countSz);
 
+    shm_unlink("buffer1");
+    shm_unlink("buffer2");
+    shm_unlink("counter");
+/*
     // Check rows
     for (i = 0; i < 9; i++)
     {
@@ -128,11 +135,9 @@ int main (int argc, char* argv[])
         resetArray(numbers);
     }
     printf("%d\n", *countPtr);
+*/
 
 
-    // shm_unlink("buffer1");
-    // shm_unlink("buffer2");
-    // shm_unlink("counter");
 
 }
 

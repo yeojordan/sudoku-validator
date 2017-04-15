@@ -26,6 +26,8 @@ int main (int argc, char* argv[])
 
     // Variables
     int readStatus;
+    int numbers[] = {0,0,0,0,0,0,0,0,0};
+    int row, i;
 
     // File Descriptors
     int buff1FD, buff2FD, counterFD;
@@ -62,11 +64,11 @@ int main (int argc, char* argv[])
     truncStat3 = ftruncate(counterFD, countSz);
 
     printf("%d %d %d\n", truncStat1, truncStat2, truncStat3);
-    if (truncStat1 == -1 || truncStat2 == -1 || truncStat3 == -1)
-    {
-        fprintf( stderr, "Error setting size of shared memory\n" );
-        return -1;
-    }
+    // if (truncStat1 == -1 || truncStat2 == -1 || truncStat3 == -1)
+    // {
+    //     fprintf( stderr, "Error setting size of shared memory\n" );
+    //     return -1;
+    // }
 
     // Memory mapping
     buff1Ptr = (int*) mmap(NULL, buff1Sz, PROT_READ | PROT_WRITE, MAP_SHARED, buff1FD, 0);
@@ -85,8 +87,75 @@ int main (int argc, char* argv[])
         return -1;
     }
 
+
+// Check rows
+for (i = 0; i < 9; i++)
+{
+    printf("Checking row: %d\n", i+1);
+    row = checkRow(buff2Ptr, numbers, i, 9 );
+    if ( row != 0)
+    {
+        // Write to log file
+        // Add method here
+    }
+    else
+    {
+
+        // Increment valid sub-grid counter
+        (*countPtr)++;
+        //printf("%d\n", *countPtr);
+    }
+    resetArray(numbers);
+}
+printf("%d\n", *countPtr);
+
+
+
+
     // shm_unlink("buffer1");
     // shm_unlink("buffer2");
     // shm_unlink("counter");
 
+}
+
+// Row is zero based
+// Cols starts from 0
+int checkRow(int* matrix, int numbers[], int rows, int cols)
+{
+    int i,j;
+    int val;
+    int status = 0;
+    for ( i = 0; i < cols; i++)
+    {
+        // Obtain the value in buffer2
+        val = matrix[rows*cols+i];
+        //printf("%d ", val);
+        // Increment numbers for each occurrence
+        numbers[val-1]++;
+    }
+
+    // If row is invalid
+    for ( j = 0; j < 9; j++ )
+    {
+        if ( numbers[j] != 1)
+        {
+            //printf("Invalid Row: %d\n", rows+1);
+            return (rows+1);
+            //status = rows + 1;
+        }
+        //numbers[j] = 0;
+    }
+
+    //printf(" Row: %d\n Status: %d\n", rows+1, status);
+    //printf("Valid Row: %d\n", rows+1);
+    return status;
+}
+
+void resetArray(int numbers[])
+{
+    int i;
+    for( i = 0; i < 9; i++)
+    {
+        numbers[i] = 0;
+    }
 }

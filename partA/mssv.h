@@ -9,3 +9,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include "fileIO.h"
+
+int checkRow(int* matrix, int numbers[], int rows, int cols);
+void resetArray(int numbers[]);

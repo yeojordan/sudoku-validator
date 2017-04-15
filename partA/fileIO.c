@@ -30,3 +30,6 @@ int readFile(char* inputFile, int* buffer)
 
     return 0;
 }
+
+// write to logfile
+// int writeFile( )

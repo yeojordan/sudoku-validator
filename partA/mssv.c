@@ -27,7 +27,7 @@ int main (int argc, char* argv[])
     // Variables
     int readStatus;
     int numbers[] = {0,0,0,0,0,0,0,0,0};
-    int row, i;
+    int row, i, j;
 
     // File Descriptors
     int buff1FD, buff2FD, counterFD;
@@ -130,7 +130,33 @@ int main (int argc, char* argv[])
     }
     printf("%d\n", *countPtr);
 
+    // Check sub grids
+    for (i = 0; i < SUB; i++)
+    {
 
+        for (j = 0; j < SUB; j++)
+        {
+            printf("Checking subgrid %d, %d\n", i*SUB, j*SUB);
+            row = checkSub(numbers, i*SUB, j*SUB, buff2Ptr);
+
+            if ( row != 0)
+            {
+                // Write to log file
+                // Add method here
+            }
+            else
+            {
+
+                // Increment valid sub-grid counter
+                (*countPtr)++;
+                //printf("%d\n", *countPtr);
+            }
+            resetArray(numbers);
+        }
+    }
+
+    printf("%d\n", *countPtr);
+    
     // Clean up shared memory
     munmap(buff1Ptr, buff1Sz);
     munmap(buff2Ptr, buff2Sz);
@@ -216,7 +242,36 @@ int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] )
     return status;
 }
 
+int checkSub(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] )
+{
+    int i, j, val, status = 0;
 
+    for( i = rows; i < rows + SUB; i++)
+    {
+        for( j = cols; j < cols + SUB; j++)
+        {
+            val = (*matrix)[i][j];
+
+            printf("%d ", val);
+            numbers[val-1]++;
+        }
+        printf("\n");
+    }
+
+    // If column is invalid
+    for ( j = 0; j < 9; j++ )
+    {
+        if ( numbers[j] != 1)
+        {
+            //printf("Invalid Row: %d\n", rows+1);
+            return (cols);
+            //status = rows + 1;
+        }
+        //numbers[j] = 0;
+    }
+
+    return status;
+}
 
 void resetArray(int numbers[])
 {

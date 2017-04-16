@@ -11,7 +11,9 @@
 #include "fileIO.h"
 
 #define NINE 9
+#define SUB 3
 
 int checkRow(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
+int checkSub(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 void resetArray(int numbers[]);

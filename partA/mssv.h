@@ -12,6 +12,6 @@
 
 #define NINE 9
 
-int checkRow(int numbers[], int rows, int cols, int x, int y, int (*matrix)[x][y] );
-int checkCol(int* matrix, int numbers[], int rows, int cols);
+int checkRow(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
+int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 void resetArray(int numbers[]);

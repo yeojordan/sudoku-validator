@@ -80,8 +80,8 @@ int main (int argc, char* argv[])
 
     // Read input file
     readStatus = readFile(inputFile, NINE, NINE, buff2Ptr);
-    int val = (*buff2Ptr)[0][0];
-    printf("Test: %d\n", val);
+
+
     if (readStatus != 0)
     {
         printf("Error reading contents of file");
@@ -89,12 +89,11 @@ int main (int argc, char* argv[])
     }
 
 
-
     // Check rows
     for (i = 0; i < 9; i++)
     {
         printf("Checking row: %d\n", i+1);
-        row = checkRow( numbers, i, 9, 9, 9, buff2Ptr );
+        row = checkRow( numbers, i, 9, buff2Ptr );
         if ( row != 0)
         {
             // Write to log file
@@ -109,12 +108,12 @@ int main (int argc, char* argv[])
         resetArray(numbers);
     }
     printf("%d\n", *countPtr);
-/*
+
     // Check Columns
     for (i = 0; i < 9; i++)
     {
         printf("Checking column: %d\n", i+1);
-        row = checkCol(buff2Ptr, numbers, 9, i+1 );
+        row = checkCol(numbers, 9, i+1, buff2Ptr);
         if ( row != 0)
         {
             // Write to log file
@@ -130,16 +129,16 @@ int main (int argc, char* argv[])
         resetArray(numbers);
     }
     printf("%d\n", *countPtr);
-*/
 
 
-munmap(buff1Ptr, buff1Sz);
-munmap(buff2Ptr, buff2Sz);
-munmap(countPtr, countSz);
+    // Clean up shared memory
+    munmap(buff1Ptr, buff1Sz);
+    munmap(buff2Ptr, buff2Sz);
+    munmap(countPtr, countSz);
 
-shm_unlink("buffer1");
-shm_unlink("buffer2");
-shm_unlink("counter");
+    shm_unlink("buffer1");
+    shm_unlink("buffer2");
+    shm_unlink("counter");
 }
 
 
@@ -149,7 +148,7 @@ shm_unlink("counter");
 
 // Row is zero based
 // Cols starts from 1
-int checkRow(int numbers[], int rows, int cols, int x, int y, int (*matrix)[x][y] )
+int checkRow(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] )
 {
     int i,j;
     int val = 0;
@@ -166,7 +165,7 @@ int checkRow(int numbers[], int rows, int cols, int x, int y, int (*matrix)[x][y
         // Increment numbers for each occurrence
         numbers[val-1]++;
     }
-
+    printf("\n");
     // If row is invalid
     for ( j = 0; j < NINE; j++ )
     {
@@ -186,7 +185,7 @@ int checkRow(int numbers[], int rows, int cols, int x, int y, int (*matrix)[x][y
 
 // Rows start from 1
 // Columns start from 1
-int checkCol(int* matrix, int numbers[], int rows, int cols)
+int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] )
 {
     int i,j;
     int val;
@@ -194,7 +193,8 @@ int checkCol(int* matrix, int numbers[], int rows, int cols)
     for ( i = 0; i < rows; i++)
     {
         // Obtain the value in buffer2
-        val = matrix[rows*i+(cols-1)];
+
+        val = (*matrix)[cols-1][i];
         printf("%d\n", val);
         // Increment numbers for each occurrence
         numbers[val-1]++;

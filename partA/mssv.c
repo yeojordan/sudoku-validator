@@ -1,6 +1,6 @@
 
 #include "mssv.h"
-#define NINE 9
+
 
 int main (int argc, char* argv[])
 {
@@ -80,26 +80,21 @@ int main (int argc, char* argv[])
 
     // Read input file
     readStatus = readFile(inputFile, NINE, NINE, buff2Ptr);
-
+    int val = (*buff2Ptr)[0][0];
+    printf("Test: %d\n", val);
     if (readStatus != 0)
     {
         printf("Error reading contents of file");
         return -1;
     }
 
-    munmap(buff1Ptr, buff1Sz);
-    munmap(buff2Ptr, buff2Sz);
-    munmap(countPtr, countSz);
 
-    shm_unlink("buffer1");
-    shm_unlink("buffer2");
-    shm_unlink("counter");
-/*
+
     // Check rows
     for (i = 0; i < 9; i++)
     {
         printf("Checking row: %d\n", i+1);
-        row = checkRow(buff2Ptr, numbers, i, 9 );
+        row = checkRow( numbers, i, 9, 9, 9, buff2Ptr );
         if ( row != 0)
         {
             // Write to log file
@@ -114,7 +109,7 @@ int main (int argc, char* argv[])
         resetArray(numbers);
     }
     printf("%d\n", *countPtr);
-
+/*
     // Check Columns
     for (i = 0; i < 9; i++)
     {
@@ -138,7 +133,13 @@ int main (int argc, char* argv[])
 */
 
 
+munmap(buff1Ptr, buff1Sz);
+munmap(buff2Ptr, buff2Sz);
+munmap(countPtr, countSz);
 
+shm_unlink("buffer1");
+shm_unlink("buffer2");
+shm_unlink("counter");
 }
 
 
@@ -148,22 +149,26 @@ int main (int argc, char* argv[])
 
 // Row is zero based
 // Cols starts from 1
-int checkRow(int* matrix, int numbers[], int rows, int cols)
+int checkRow(int numbers[], int rows, int cols, int x, int y, int (*matrix)[x][y] )
 {
     int i,j;
-    int val;
+    int val = 0;
     int status = 0;
     for ( i = 0; i < cols; i++)
     {
+
         // Obtain the value in buffer2
-        val = matrix[rows*cols+i];
-        //printf("%d ", val);
+
+        val = (*matrix)[rows][i];
+
+        //val = matrix[rows*cols+i];
+        printf("%d ", val);
         // Increment numbers for each occurrence
         numbers[val-1]++;
     }
 
     // If row is invalid
-    for ( j = 0; j < 9; j++ )
+    for ( j = 0; j < NINE; j++ )
     {
         if ( numbers[j] != 1)
         {

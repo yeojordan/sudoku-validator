@@ -5,7 +5,7 @@
 int readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols])
 {
     FILE* inStrm;
-    int rowOff, i, j, val;
+    int i, j;
 
     inStrm = fopen(inputFile, "r");
 

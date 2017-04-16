@@ -10,6 +10,8 @@
 #include <sys/wait.h>
 #include "fileIO.h"
 
-int checkRow(int* matrix, int numbers[], int rows, int cols);
+#define NINE 9
+
+int checkRow(int numbers[], int rows, int cols, int x, int y, int (*matrix)[x][y] );
 int checkCol(int* matrix, int numbers[], int rows, int cols);
 void resetArray(int numbers[]);

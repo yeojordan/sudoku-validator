@@ -121,7 +121,6 @@ row = 0;
     // Create child processes for rows
     while( processNum < NINE && pid != 0 )
     {
-        printf("MAKING CHILDREN %d!\n", processNum);
 
         signal(SIGCHLD, SIG_IGN);
         pid = fork();
@@ -136,22 +135,18 @@ row = 0;
         // Check rows
         for (i = 0; i < NINE; i++)
         {
-            printf("Checking row: %d\n", i+1);
             //row = checkRow( numbers, i, 9, buff1Ptr );
-
-            numbers[((*buff1Ptr)[processNum][i])-1]++;
+            numbers[((*buff1Ptr)[processNum-1][i])-1]++;
 
         }
 
 
         //printf("%d\n", *countPtr);
-printf("Waiting for process %d\n", processNum );
                         //acquire locks
                         sem_wait(&(semaphores[2]));//Empty lock
                         sem_wait(&(semaphores[0]));//Mutex lock
                         //put into subtotal along with PID
                         //
-printf("Finished waiting for %d\n", processNum );
 
 
 
@@ -160,39 +155,109 @@ printf("Finished waiting for %d\n", processNum );
                         region->positionY = 0;
                         region->pid = getpid();
                         region->valid = checkValid(numbers);
-                    printf("Process ID: %d - Row: %d - Valid: %d\n", region->pid, processNum, region->valid);
-                        //release locks
+                
                         sem_post(&(semaphores[0]));
                         sem_post(&(semaphores[1]));
-
+			kill(getpid(), SIGTERM);
                         //resetArray(numbers);
     }
     // Parent
-    else if ( pid > 0)
-    {
-
-        for(int ii = 0; ii < NINE; ii++)
-        {
-printf("HI\n");
-
-            //wait
-            sem_wait(&(semaphores[1]));//Lock full
-            sem_wait(&(semaphores[0]));//Lock mutex
-
-            printf("Process ID-%d: row %d is valid\n",
-                    region->pid, (region->positionX)+1 );
-
-
-            sem_post(&(semaphores[0]));//Unlock mutex
-            sem_post(&(semaphores[2]));//Unlock empty
-        }
-    }
 
     // Create child for column
-    // if( pid == 0)
-    // {
-    //
-    // }
+    if( pid > 0)
+    {
+	pid = fork();
+	processNum++;
+    }
+    
+    if( pid == 0)
+    {
+
+	   int validCol = 0; 
+	   for ( int nn = 0; nn < NINE; nn++)
+	   {
+	       for(int ii = 0; ii < NINE; ii++)
+   	       { 	       
+                    numbers[(*buff1Ptr)[ii][nn]-1]++;
+	       }
+		
+               if ( checkValid( numbers) == TRUE )
+	       {
+		   validCol++;
+	       }
+                        //put into subtotal along with PID
+                        //
+
+		resetArray(numbers);
+
+                        //release locks
+	   }
+
+	    
+			sem_wait(&(semaphores[2]));//Empty lock
+            
+                        sem_wait(&(semaphores[0]));//Mutex lock
+	   		
+                        region->type = COL;
+                        region->positionX = validCol;
+                        region->pid = getpid();
+		        sem_post(&(semaphores[0]));
+                        sem_post(&(semaphores[1]));
+		kill(getpid(), SIGTERM);
+    }
+
+
+    if (pid > 0)
+    {
+        pid = fork();
+        processNum++;
+    }
+
+    if (pid == 0)
+    {
+	int validSub = 0;
+        for ( int jj = 0; jj < 3; jj++)
+        {
+            for (int kk = 0; kk < 3; kk++)
+	    {
+
+		for (int ll = jj*3; ll < jj*3+3; ll++)
+    		{
+		    for (int mm = kk*3; mm < kk*3+3; mm++)
+		    {                    
+			numbers[(*buff1Ptr)[ll][mm]-1]++;
+		
+		    }
+		}
+       
+	    	if ( checkValid(numbers) == TRUE )
+	    	{
+		    validSub++;
+	   	}
+		resetArray(numbers);
+	     }
+
+        }
+    
+		
+			sem_wait(&(semaphores[2]));//Empty lock
+                        sem_wait(&(semaphores[0]));//Mutex lock
+                        //put into subtotal along with PID
+                        //
+
+
+                        region->type = SUB_REGION;
+                        region->positionX = validSub;
+                        region->pid = getpid();
+                        //release locks
+                        sem_post(&(semaphores[0]));	
+                        sem_post(&(semaphores[1]));
+
+			kill(getpid(), SIGTERM);
+    }
+
+
+
 
     // Create child for sub regions
     // if(pid == 0)
@@ -210,7 +275,7 @@ printf("HI\n");
         {
             // Write to log file
             // Add method here
-        }
+       }
         else
         {
             // Increment valid sub-grid counter
@@ -269,19 +334,114 @@ printf("HI\n");
 
     printf("%d\n", *countPtr);
 */
+
+
+    if ( pid > 0)
+    {
+	int count=0;
+	
+
+        for(int ii = 0; ii < 11; ii++)
+        {
+            
+            char* type;
+	    int position;
+
+            //wait
+            sem_wait(&(semaphores[1]));//Lock full
+            sem_wait(&(semaphores[0]));//Lock mutex
+
+            if (region->type == ROW)
+            {
+                type = "row";
+		position = region->positionX;
+
+		validRegion(&count, region);
+		if ( region->valid == TRUE)
+		{
+			printf("Validation result from process ID-%d: %s %d is valid\n",
+                    		region->pid,type, position);
+            	}
+		else
+		{
+			printf("Validation result from process ID-%d: %s %d is invalid\n",
+				region->pid, type, position);
+		}
+
+	    }
+            else if (region->type == COL)
+            {
+                type = "column";
+		validRegion(&count, region);
+		position = region->positionX;
+
+		printf("Validation result from process ID-%d: %d out of 9 columns are valid\n",region->pid, region->positionX);
+            }
+            else
+            {
+                type = "sub-grid";
+		validRegion(&count, region);
+		position = region->positionX;
+
+		printf("Validation result from process ID-%d: %d out of 9 sub-grids are valid\n",region->pid, region->positionX);
+		
+            }
+
+            sem_post(&(semaphores[0]));//Unlock mutex
+            sem_post(&(semaphores[2]));//Unlock empty
+        }
+
+	char* message;
+
+	if (count == 27)
+	{
+	     message = "valid";
+	}
+	else
+	{
+	    message = "invalid";
+	}
+
+	printf("There are %d valid sub-grids, and thus the solution is %s\n", count, message);
+
+    }
+
     // Clean up shared memory
     munmap(buff1Ptr, buff1Sz);
     munmap(buff2Ptr, buff2Sz);
     munmap(countPtr, countSz);
-
+    munmap(semaphores, sizeof(sem_t)*3);
+    munmap(region, sizeof(Region));
+ 
     shm_unlink("buffer1");
     shm_unlink("buffer2");
     shm_unlink("counter");
+    shm_unlink("semaphores");
+    shm_unlink("region");
 }
 
 
 
 /******************************************************************************/
+
+
+void validRegion(int* count, Region* region)
+{
+    if ( region->type == ROW )
+    {
+	if ( region->valid == TRUE)
+	{
+		*count = *count + 1;
+	} 	
+    }
+    else
+    {
+	*count = *count + region->positionX;
+    }
+
+
+	
+}
 
 
 // Row is zero based
@@ -330,8 +490,7 @@ int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] )
     int status = 0;
     for ( i = 0; i < rows; i++)
     {
-        // Obtain the value in buffer2
-
+         // Obtain the value in buffer2
         val = (*matrix)[cols-1][i];
         printf("%d\n", val);
         // Increment numbers for each occurrence

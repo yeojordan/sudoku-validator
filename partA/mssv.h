@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
-
+#include <string.h>
 
 
 #define NINE 9
@@ -39,4 +39,5 @@ int readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols]);
 int checkRow(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 int checkSub(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
+void writeFile(Region* region, char* format);
 void resetArray(int numbers[]);

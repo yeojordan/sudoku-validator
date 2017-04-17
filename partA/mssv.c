@@ -145,7 +145,10 @@ row = 0;
     {	
 	    if( processNum <= 9)
         {
-        
+            char start[] = "row ";
+            char format[100];
+            char numRow[1];
+            char end[] = " is invalid\n";
              
             // Check rows
             for (i = 0; i < NINE; i++)
@@ -174,12 +177,18 @@ row = 0;
                         {  
                             numValid = 1;  
                         }
+                        else // Write to log file
+                        {
+                            sprintf(format, "row %d is invalid\n", processNum);
+                        printf("Initial format string: %s\n", format); 
+                            writeFile(region, format);
+                            
+                        }
                        
                         buff2Ptr[processNum-1] = numValid;
 
                         *countPtr = *countPtr + numValid;
 
-printf("Counter Row: %d\n", *countPtr);
                         sem_post(&(semaphores[0]));
                         // Update counter
                         sem_post(&(semaphores[1]));
@@ -201,7 +210,7 @@ printf("Counter Row: %d\n", *countPtr);
 */
         else if(processNum == 10)
         {
-            // Check rows
+            // Check cols
 	        int validCol = 0; 
 	        for ( int nn = 0; nn < NINE; nn++)
 	        {
@@ -239,7 +248,6 @@ printf("Counter Row: %d\n", *countPtr);
                         // Update counter
                         *countPtr = *countPtr + validCol;
 		                
-printf("Counter Col: %d\n", *countPtr);
                         sem_post(&(semaphores[0]));
                         sem_post(&(semaphores[1]));
 //		kill(getpid(), SIGTERM);
@@ -302,7 +310,6 @@ printf("Counter Col: %d\n", *countPtr);
                         *countPtr = *countPtr + validSub;
                         //release locks
 
-printf("Counter Sub-Grid: %d\n", *countPtr);
                         sem_post(&(semaphores[0]));	
                         sem_post(&(semaphores[1]));
 
@@ -581,4 +588,22 @@ int readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols])
     fclose(inStrm);
 
     return 0;
+}
+
+
+void writeFile(Region* region, char* format)
+{
+    char* filename = "logfile";
+    FILE* outFile;
+    int val;
+
+    outFile = fopen(filename, "w");
+    if (outFile == NULL)
+    {
+        perror("Error opening file for writing\n");
+        exit(1);
+    }
+
+    fprintf(outFile, "process ID-%d: %s\n",region->pid, format);   
+            
 }

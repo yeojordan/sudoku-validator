@@ -35,6 +35,7 @@ int main (int argc, char* argv[])
     int processNum = 0;
     int pid;
     int numValid;
+    char format[500];
 
     // File Descriptors
     int buff1FD, buff2FD, counterFD, semFD, regionFD;
@@ -145,10 +146,6 @@ row = 0;
     {	
 	    if( processNum <= 9)
         {
-            char start[] = "row ";
-            char format[100];
-            char numRow[1];
-            char end[] = " is invalid\n";
              
             // Check rows
             for (i = 0; i < NINE; i++)
@@ -180,7 +177,7 @@ row = 0;
                         else // Write to log file
                         {
                             sprintf(format, "row %d is invalid\n", processNum);
-                        printf("Initial format string: %s\n", format); 
+printf("    %s", format);
                             writeFile(region, format);
                             
                         }
@@ -210,6 +207,8 @@ row = 0;
 */
         else if(processNum == 10)
         {
+            //char format[500];
+            sprintf(format, "column ");
             // Check cols
 	        int validCol = 0; 
 	        for ( int nn = 0; nn < NINE; nn++)
@@ -223,6 +222,10 @@ row = 0;
 	            {
 		            validCol++;
 	            }
+                else
+                {
+                    sprintf(format + strlen(format), "%d, ", nn+1);     
+                }
                         //put into subtotal along with PID
     
                         //
@@ -232,14 +235,18 @@ row = 0;
                         //release locks
 	        }
 
-	    
+	            sprintf(format + strlen(format), "are invalid\n"); 
 			            sem_wait(&(semaphores[2]));//Empty lock
                         sem_wait(&(semaphores[0]));//Mutex lock
 	   		
                         region->type = COL;
                         region->positionX = validCol;
                         region->pid = getpid();
-
+if(validCol != 9)
+{
+    printf("    %s", format);
+    writeFile(region, format);    
+}
                         // Update buffer2
                         numValid = region->positionX;
                        
@@ -265,7 +272,7 @@ row = 0;
 */	
         else if( processNum == 11)
         {
-
+            sprintf(format, "sub-grid ");
             // Check rows
             int validSub = 0;
             for ( int jj = 0; jj < 3; jj++)
@@ -286,17 +293,26 @@ row = 0;
 	    	        {
 		                validSub++;
 	   	            }
+                    else
+                    {
+                        sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
+                                    jj+1, jj+3, kk+1, kk+3); 
+                        
+                    }
 		            resetArray(numbers);
 	            }
 
             }
     
-		
+		    sprintf(format+strlen(format), "is invalid\n");
 			            sem_wait(&(semaphores[2]));//Empty lock
                         sem_wait(&(semaphores[0]));//Mutex lock
                         //put into subtotal along with PID
                         //
-
+if(validSub != 9)
+{
+    writeFile(region, format);    
+}
 
                         region->type = SUB_REGION;
                         region->positionX = validSub;
@@ -597,13 +613,14 @@ void writeFile(Region* region, char* format)
     FILE* outFile;
     int val;
 
-    outFile = fopen(filename, "w");
+    outFile = fopen(filename, "a");
     if (outFile == NULL)
     {
         perror("Error opening file for writing\n");
         exit(1);
     }
 
-    fprintf(outFile, "process ID-%d: %s\n",region->pid, format);   
-            
+    fprintf(outFile, "process ID-%d: %s",region->pid, format);   
+    
+    fclose(outFile); 
 }

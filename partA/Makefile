@@ -21,7 +21,7 @@ mssv.o : mssv.c mssv.h #fileIO.h
 #	$(CC) -c fileIO.c $(CFLAGS)
 
 clean:
-	rm -f $(EXEC1) $(OBJ1)
+	rm -f $(EXEC1) $(OBJ1) logfile
 
 run:
 	./$(EXEC1) ../testFiles/specTest.txt 1

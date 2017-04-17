@@ -27,11 +27,14 @@ int main (int argc, char* argv[])
     // Variables
     int readStatus;
     int numbers[] = {0,0,0,0,0,0,0,0,0};
+    int childIDs[11];
+
     int row, i, j;
     Region* region;
     sem_t semFull, semEmpty, semMutex, *semaphores;
     int processNum = 0;
     int pid;
+    int numValid;
 
     // File Descriptors
     int buff1FD, buff2FD, counterFD, semFD, regionFD;
@@ -107,6 +110,7 @@ int main (int argc, char* argv[])
     // Initialise counter
     *countPtr = 0;
 row = 0;
+
     // Read input file
     readStatus = readFile(inputFile, NINE, NINE, buff1Ptr);
     if (readStatus != 0)
@@ -119,11 +123,18 @@ row = 0;
     processNum = 0;
 
     // Create child processes for rows
-    while( processNum < NINE && pid != 0 )
+    while( processNum < 11 && pid != 0 )
     {
 
         signal(SIGCHLD, SIG_IGN);
         pid = fork();
+    
+        // Store child's pid in array
+        if ( pid > 0)
+        {
+            printf("Child ID: %d, processNum: %d\n", pid, processNum);
+            childIDs[processNum] = pid;    
+        }
         processNum++;
 
 
@@ -131,116 +142,149 @@ row = 0;
 
     // Child
     if( pid == 0)
-    {
-        // Check rows
-        for (i = 0; i < NINE; i++)
+    {	
+	    if( processNum <= 9)
         {
-            //row = checkRow( numbers, i, 9, buff1Ptr );
-            numbers[((*buff1Ptr)[processNum-1][i])-1]++;
+        
+             
+            // Check rows
+            for (i = 0; i < NINE; i++)
+            {
 
-        }
+                //row = checkRow( numbers, i, 9, buff1Ptr );
+                numbers[((*buff1Ptr)[processNum-1][i])-1]++;
+
+            }
 
 
         //printf("%d\n", *countPtr);
                         //acquire locks
                         sem_wait(&(semaphores[2]));//Empty lock
                         sem_wait(&(semaphores[0]));//Mutex lock
-                        //put into subtotal along with PID
-                        //
-
-
+                        
 
                         region->type = ROW;
                         region->positionX = processNum;
                         region->positionY = 0;
                         region->pid = getpid();
                         region->valid = checkValid(numbers);
-                
+                        // Update buffer2
+                        numValid = 0;
+                        if (region->valid == TRUE)
+                        {  
+                            numValid = 1;  
+                        }
+                       
+                        buff2Ptr[processNum-1] = numValid;
+
+                        *countPtr = *countPtr + numValid;
+
+printf("Counter Row: %d\n", *countPtr);
                         sem_post(&(semaphores[0]));
+                        // Update counter
                         sem_post(&(semaphores[1]));
-			kill(getpid(), SIGTERM);
+			//kill(getpid(), SIGTERM);
                         //resetArray(numbers);
-    }
+        }
+  //  }
     // Parent
 
     // Create child for column
-    if( pid > 0)
+/*    if( pid > 0)
     {
 	pid = fork();
 	processNum++;
     }
-    
-    if( pid == 0)
+*/    
+/*    if( pid == 0)
     {
-
-	   int validCol = 0; 
-	   for ( int nn = 0; nn < NINE; nn++)
-	   {
-	       for(int ii = 0; ii < NINE; ii++)
-   	       { 	       
+*/
+        else if(processNum == 10)
+        {
+            // Check rows
+	        int validCol = 0; 
+	        for ( int nn = 0; nn < NINE; nn++)
+	        {
+	            for(int ii = 0; ii < NINE; ii++)
+   	            { 	       
                     numbers[(*buff1Ptr)[ii][nn]-1]++;
-	       }
+	            }
 		
-               if ( checkValid( numbers) == TRUE )
-	       {
-		   validCol++;
-	       }
+                if ( checkValid( numbers) == TRUE )
+	            {
+		            validCol++;
+	            }
                         //put into subtotal along with PID
+    
                         //
 
-		resetArray(numbers);
+		        resetArray(numbers);
 
                         //release locks
-	   }
+	        }
 
 	    
-			sem_wait(&(semaphores[2]));//Empty lock
-            
+			            sem_wait(&(semaphores[2]));//Empty lock
                         sem_wait(&(semaphores[0]));//Mutex lock
 	   		
                         region->type = COL;
                         region->positionX = validCol;
                         region->pid = getpid();
-		        sem_post(&(semaphores[0]));
+
+                        // Update buffer2
+                        numValid = region->positionX;
+                       
+                        buff2Ptr[processNum-1] = validCol;
+
+                        // Update counter
+                        *countPtr = *countPtr + validCol;
+		                
+printf("Counter Col: %d\n", *countPtr);
+                        sem_post(&(semaphores[0]));
                         sem_post(&(semaphores[1]));
-		kill(getpid(), SIGTERM);
-    }
+//		kill(getpid(), SIGTERM);
+        }
 
 
-    if (pid > 0)
+/*    if (pid > 0)
     {
         pid = fork();
         processNum++;
     }
-
-    if (pid == 0)
+*/
+/*    if (pid == 0)
     {
-	int validSub = 0;
-        for ( int jj = 0; jj < 3; jj++)
+*/	
+        else if( processNum == 11)
         {
-            for (int kk = 0; kk < 3; kk++)
-	    {
 
-		for (int ll = jj*3; ll < jj*3+3; ll++)
-    		{
-		    for (int mm = kk*3; mm < kk*3+3; mm++)
-		    {                    
-			numbers[(*buff1Ptr)[ll][mm]-1]++;
+            // Check rows
+            int validSub = 0;
+            for ( int jj = 0; jj < 3; jj++)
+            {
+                for (int kk = 0; kk < 3; kk++)
+	            {
+
+		            for (int ll = jj*3; ll < jj*3+3; ll++)
+    		        {
+		                for (int mm = kk*3; mm < kk*3+3; mm++)
+		                {                       
+			                numbers[(*buff1Ptr)[ll][mm]-1]++;
 		
-		    }
-		}
+		                }
+		            }
        
-	    	if ( checkValid(numbers) == TRUE )
-	    	{
-		    validSub++;
-	   	}
-		resetArray(numbers);
-	     }
+	    	        if ( checkValid(numbers) == TRUE )
+	    	        {
+		                validSub++;
+	   	            }
+		            resetArray(numbers);
+	            }
 
-        }
+            }
     
 		
-			sem_wait(&(semaphores[2]));//Empty lock
+			            sem_wait(&(semaphores[2]));//Empty lock
                         sem_wait(&(semaphores[0]));//Mutex lock
                         //put into subtotal along with PID
                         //
@@ -249,97 +293,35 @@ row = 0;
                         region->type = SUB_REGION;
                         region->positionX = validSub;
                         region->pid = getpid();
+                        // Update buffer2
+                        
+                       
+                        buff2Ptr[processNum-1] = validSub;
+
+                        // Update counter
+                        *countPtr = *countPtr + validSub;
                         //release locks
+
+printf("Counter Sub-Grid: %d\n", *countPtr);
                         sem_post(&(semaphores[0]));	
                         sem_post(&(semaphores[1]));
 
-			kill(getpid(), SIGTERM);
-    }
-
-
-
-
-    // Create child for sub regions
-    // if(pid == 0)
-    // {
-    //
-    // }
-
-/*
-    // Check rows
-    for (i = 0; i < 9; i++)
-    {
-        printf("Checking row: %d\n", i+1);
-        row = checkRow( numbers, i, 9, buff1Ptr );
-        if ( row != 0)
-        {
-            // Write to log file
-            // Add method here
-       }
-        else
-        {
-            // Increment valid sub-grid counter
-            (*countPtr)++;
-            //printf("%d\n", *countPtr);
-        }
-        resetArray(numbers);
-    }
-    printf("%d\n", *countPtr);
-
-    // Check Columns
-    for (i = 0; i < 9; i++)
-    {
-        printf("Checking column: %d\n", i+1);
-        row = checkCol(numbers, 9, i+1, buff1Ptr);
-        if ( row != 0)
-        {
-            // Write to log file
-            // Add method here
-        }
-        else
-        {
-
-            // Increment valid sub-grid counter
-            (*countPtr)++;
-            //printf("%d\n", *countPtr);
-        }
-        resetArray(numbers);
-    }
-    printf("%d\n", *countPtr);
-
-    // Check sub grids
-    for (i = 0; i < SUB; i++)
-    {
-
-        for (j = 0; j < SUB; j++)
-        {
-            printf("Checking subgrid %d, %d\n", i*SUB, j*SUB);
-            row = checkSub(numbers, i*SUB, j*SUB, buff1Ptr);
-
-            if ( row != 0)
-            {
-                // Write to log file
-                // Add method here
-            }
-            else
-            {
-
-                // Increment valid sub-grid counter
-                (*countPtr)++;
-                //printf("%d\n", *countPtr);
-            }
-            resetArray(numbers);
+		//	kill(getpid(), SIGTERM);
         }
     }
 
-    printf("%d\n", *countPtr);
-*/
+
+
 
 
     if ( pid > 0)
     {
 	int count=0;
-	
+	  //  for(int jj = 0; jj < 11; jj++)
+      //  {
+       //     waitpid(childIDs[jj], NULL, 0);
+            printf("Parent Waiting for Children\n");    
+      //  }
 
         for(int ii = 0; ii < 11; ii++)
         {
@@ -393,7 +375,7 @@ row = 0;
 
 	char* message;
 
-	if (count == 27)
+	if (*countPtr == 27)
 	{
 	     message = "valid";
 	}
@@ -402,8 +384,8 @@ row = 0;
 	    message = "invalid";
 	}
 
-	printf("There are %d valid sub-grids, and thus the solution is %s\n", count, message);
-
+	printf("There are %d valid sub-grids, and thus the solution is %s\n", *countPtr, message);
+printf("Children are finished\n");
     }
 
     // Clean up shared memory

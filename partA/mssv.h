@@ -1,6 +1,6 @@
 
 
-#include "fileIO.h"
+
 
 
 #include <stdio.h>
@@ -35,6 +35,7 @@ typedef struct
 } Region;
 
 
+int readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols]);
 int checkRow(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
 int checkSub(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );

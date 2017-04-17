@@ -309,16 +309,16 @@ if(validCol != 9)
                         sem_wait(&(semaphores[0]));//Mutex lock
                         //put into subtotal along with PID
                         //
-if(validSub != 9)
-{
-    writeFile(region, format);    
-}
 
                         region->type = SUB_REGION;
                         region->positionX = validSub;
                         region->pid = getpid();
                         // Update buffer2
                         
+if(validSub != 9)
+{
+    writeFile(region, format);    
+}
                        
                         buff2Ptr[processNum-1] = validSub;
 

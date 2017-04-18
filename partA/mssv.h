@@ -29,15 +29,22 @@ typedef struct
 {
     Region_Type type;
     int positionX;
-    int positionY;
     pid_t pid;
     int valid;
 } Region;
 
 
-int readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols]);
-int checkRow(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
-int checkCol(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
-int checkSub(int numbers[], int rows, int cols, int (*matrix)[NINE][NINE] );
+void readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols]);
 void writeFile(Region* region, char* format);
 void resetArray(int numbers[]);
+int checkValid(int numbers[]);
+void parentManager(Region* region, sem_t *semaphores, int* countPtr, 
+                        int* resourceCount);
+void childManager(Region* region, sem_t* semaphores, int (*buff1Ptr)[NINE][NINE]
+    , int *buff2Ptr, int* countPtr, int* resourceCount, int processNum, 
+        int* numbers);
+void initMemory(int*, int*, int*, int*, int*, int*);
+//void mapMemory(int*, int*, int*, int*, int*, int*, int (**buff, int**, int**, sem_t**, int**, int**); 
+void validateUse(int, char**);
+//void cleanMemory(int****, int**, int**, sem_t**, int**, int**);
+   

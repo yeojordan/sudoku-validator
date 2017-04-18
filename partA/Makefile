@@ -6,7 +6,7 @@
 # MAKE VARIABLES
 EXEC1 = mssv
 OBJ1 = mssv.o 
-CFLAGS = -Wall  -std=c99  -pthread -D _XOPEN_SOURCE=500 -Wextra -lrt
+CFLAGS = -std=c99 -pthread -D _XOPEN_SOURCE=500 -lrt
 CC = gcc
 
 

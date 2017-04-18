@@ -153,157 +153,9 @@ int main (int argc, char* argv[])
     // Child
     if( pid == 0)
     {	
-	    if( processNum <= 9)
-        {
-             
-            // Check rows
-            for (i = 0; i < NINE; i++)
-            {
-
-                //row = checkRow( numbers, i, 9, buff1Ptr );
-                numbers[((*buff1Ptr)[processNum-1][i])-1]++;
-
-            }
-
-            sem_wait(&(semaphores[0]));//Mutex lock
-                        
-
-            region[processNum-1].type = ROW;
-            region[processNum-1].positionX = processNum;
-            region[processNum-1].pid = getpid();
-            region[processNum-1].valid = checkValid(numbers);
-            // Update buffer2
-            numValid = 0;
-            if (region[processNum-1].valid == TRUE)
-            {  
-                numValid = 1;  
-            }
-            else // Write to log file
-            {
-                sprintf(format, "row %d is invalid\n", processNum);
-                writeFile(&(region[processNum-1]), format);                        
-            }
-                       
-            buff2Ptr[processNum-1] = numValid;
-
-            *countPtr = *countPtr + numValid;
-
-            sem_post(&(semaphores[0]));
-
-        }
-        else if(processNum == 10)
-        {
-            sprintf(format, "column ");
-            // Check cols
-	        int validCol = 0; 
-	        for ( int nn = 0; nn < NINE; nn++)
-	        {
-	            for(int ii = 0; ii < NINE; ii++)
-   	            { 	       
-                    numbers[(*buff1Ptr)[ii][nn]-1]++;
-	            }
-		
-                if ( checkValid( numbers) == TRUE )
-	            {
-		            validCol++;
-	            }
-                else
-                {
-                    sprintf(format + strlen(format), "%d, ", nn+1);     
-                }
-
-    
-		        resetArray(numbers);
-
-	        }
-
-	        sprintf(format + strlen(format), "are invalid\n"); 
-			sem_wait(&(semaphores[0]));//Empty lock
-
-            region[processNum-1].type = COL;
-            region[processNum-1].positionX = validCol;
-            region[processNum-1].pid = getpid();
-            if(validCol != 9)
-            {
-                writeFile(&(region[processNum-1]), format);    
-            }
-            // Update buffer2
-            numValid = region[processNum-1].positionX;
-                       
-            buff2Ptr[processNum-1] = validCol;
-
-            // Update counter
-            *countPtr = *countPtr + validCol;
-		                
-            sem_post(&(semaphores[0]));
-
-
-        }
-        else if( processNum == 11)
-        {
-            sprintf(format, "sub-grid ");
-            // Check rows
-            int validSub = 0;
-            for ( int jj = 0; jj < 3; jj++)
-            {
-                for (int kk = 0; kk < 3; kk++)
-	            {
-
-		            for (int ll = jj*3; ll < jj*3+3; ll++)
-    		        {
-		                for (int mm = kk*3; mm < kk*3+3; mm++)
-		                {                       
-			                numbers[(*buff1Ptr)[ll][mm]-1]++;
-		
-		                }
-		            }
-       
-	    	        if ( checkValid(numbers) == TRUE )
-	    	        {
-		                validSub++;
-	   	            }
-                    else
-                    {
-                        sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
-                                    jj+1, jj+3, kk+1, kk+3); 
-                        
-                    }
-		            resetArray(numbers);
-	            }
-
-            }
-    
-		    sprintf(format+strlen(format), "is invalid\n");
-            sem_wait(&(semaphores[0]));//Mutex lock
-            region[processNum-1].type = SUB_REGION;
-            region[processNum-1].positionX = validSub;
-            region[processNum-1].pid = getpid();
-                                    
-            if(validSub != 9)
-            {
-                writeFile(&(region[processNum-1]), format);    
-            }
-                       
-            buff2Ptr[processNum-1] = validSub;
-
-            // Update counter
-            *countPtr = *countPtr + validSub;
-            //release locks
-
-            sem_post(&(semaphores[0]));	
-
-        }
-
-
-        // Child signals it is finished by incremented resourceCount
-        sem_wait(&(semaphores[3]));
-        sem_wait(&(semaphores[0]));
-            printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
-            *resourceCount = *resourceCount - 1;
-        sem_post(&(semaphores[0]));
-        sem_post(&(semaphores[3]));
+        childManager(region, semaphores, buff1Ptr, buff2Ptr, countPtr, resourceCount,  processNum, numbers );
     }
-    if ( pid > 0)
+    if ( pid > 0) // Parent process
     {
         parentManager(region, semaphores, countPtr, resourceCount);
     }
@@ -479,3 +331,167 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr, int* resour
 
 	printf("There are %d valid sub-grids, and thus the solution is %s\n", *countPtr, message);
 }
+
+
+
+
+
+
+
+void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE], int *buff2Ptr, int* countPtr, int* resourceCount, int processNum, int *numbers )
+{   
+    char format[500];
+    int numValid;
+    
+	    if( processNum <= 9)
+        {
+             
+            // Check rows
+            for (int i = 0; i < NINE; i++)
+            {
+
+                //row = checkRow( numbers, i, 9, buff1Ptr );
+                numbers[((*buff1Ptr)[processNum-1][i])-1]++;
+
+            }
+
+            sem_wait(&(semaphores[0]));//Mutex lock
+                        
+
+            region[processNum-1].type = ROW;
+            region[processNum-1].positionX = processNum;
+            region[processNum-1].pid = getpid();
+            region[processNum-1].valid = checkValid(numbers);
+            // Update buffer2
+            numValid = 0;
+            if (region[processNum-1].valid == TRUE)
+            {  
+                numValid = 1;  
+            }
+            else // Write to log file
+            {
+                sprintf(format, "row %d is invalid\n", processNum);
+                writeFile(&(region[processNum-1]), format);                        
+            }
+                       
+            buff2Ptr[processNum-1] = numValid;
+
+            *countPtr = *countPtr + numValid;
+
+            sem_post(&(semaphores[0]));
+
+        }
+        else if(processNum == 10)
+        {
+            sprintf(format, "column ");
+            // Check cols
+	        int validCol = 0; 
+	        for ( int nn = 0; nn < NINE; nn++)
+	        {
+	            for(int ii = 0; ii < NINE; ii++)
+   	            { 	       
+                    numbers[(*buff1Ptr)[ii][nn]-1]++;
+	            }
+		
+                if ( checkValid( numbers) == TRUE )
+	            {
+		            validCol++;
+	            }
+                else
+                {
+                    sprintf(format + strlen(format), "%d, ", nn+1);     
+                }
+
+    
+		        resetArray(numbers);
+
+	        }
+
+	        sprintf(format + strlen(format), "are invalid\n"); 
+			sem_wait(&(semaphores[0]));//Empty lock
+
+            region[processNum-1].type = COL;
+            region[processNum-1].positionX = validCol;
+            region[processNum-1].pid = getpid();
+            if(validCol != 9)
+            {
+                writeFile(&(region[processNum-1]), format);    
+            }
+            // Update buffer2
+            numValid = region[processNum-1].positionX;
+                       
+            buff2Ptr[processNum-1] = validCol;
+
+            // Update counter
+            *countPtr = *countPtr + validCol;
+		                
+            sem_post(&(semaphores[0]));
+
+
+        }
+        else if( processNum == 11)
+        {
+            sprintf(format, "sub-grid ");
+            // Check rows
+            int validSub = 0;
+            for ( int jj = 0; jj < 3; jj++)
+            {
+                for (int kk = 0; kk < 3; kk++)
+	            {
+
+		            for (int ll = jj*3; ll < jj*3+3; ll++)
+    		        {
+		                for (int mm = kk*3; mm < kk*3+3; mm++)
+		                {                       
+			                numbers[(*buff1Ptr)[ll][mm]-1]++;
+		
+		                }
+		            }
+       
+	    	        if ( checkValid(numbers) == TRUE )
+	    	        {
+		                validSub++;
+	   	            }
+                    else
+                    {
+                        sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
+                                    jj+1, jj+3, kk+1, kk+3); 
+                        
+                    }
+		            resetArray(numbers);
+	            }
+
+            }
+    
+		    sprintf(format+strlen(format), "is invalid\n");
+            sem_wait(&(semaphores[0]));//Mutex lock
+            region[processNum-1].type = SUB_REGION;
+            region[processNum-1].positionX = validSub;
+            region[processNum-1].pid = getpid();
+                                    
+            if(validSub != 9)
+            {
+                writeFile(&(region[processNum-1]), format);    
+            }
+                       
+            buff2Ptr[processNum-1] = validSub;
+
+            // Update counter
+            *countPtr = *countPtr + validSub;
+            //release locks
+
+            sem_post(&(semaphores[0]));	
+
+        }
+
+
+        // Child signals it is finished by incremented resourceCount
+        sem_wait(&(semaphores[3]));
+        sem_wait(&(semaphores[0]));
+            printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
+            *resourceCount = *resourceCount - 1;
+        sem_post(&(semaphores[0]));
+        sem_post(&(semaphores[3]));
+
+}
+

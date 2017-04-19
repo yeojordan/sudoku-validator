@@ -1,8 +1,3 @@
-
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -38,13 +33,17 @@ void readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols]);
 void writeFile(Region* region, char* format);
 void resetArray(int numbers[]);
 int checkValid(int numbers[]);
-void parentManager(Region* region, sem_t *semaphores, int* countPtr, 
-                        int* resourceCount);
-void childManager(Region* region, sem_t* semaphores, int (*buff1Ptr)[NINE][NINE]
-    , int *buff2Ptr, int* countPtr, int* resourceCount, int processNum, 
-        int* numbers);
-void initMemory(int*, int*, int*, int*, int*, int*);
-//void mapMemory(int*, int*, int*, int*, int*, int*, int (**buff, int**, int**, sem_t**, int**, int**); 
-void validateUse(int, char**);
-//void cleanMemory(int****, int**, int**, sem_t**, int**, int**);
-   
+void parentManager(Region *region, sem_t *semaphores, int* countPtr,
+                        int* resourceCount );
+void childManager(Region *region, sem_t *semaphores,
+                    int (*buff1Ptr)[NINE][NINE], int *buff2Ptr, int* countPtr,
+                        int* resourceCount, int processNum, int *numbers );
+void initMemory( int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
+                    int* regionFD, int* resFD);
+void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
+                    int* regionFD, int* resFD, int (**buff1Ptr)[NINE][NINE],
+                        int (**buff2Ptr), int** countPtr, sem_t** semaphores,
+                            int** region, int** resourceCount);
+void validateUse(int argc, char* argv[]);
+void cleanMemory(int (**buff1Ptr)[NINE][NINE], int **buff2Ptr, int** countPtr,
+                    sem_t **semaphores, int **region, int** resourceCount);

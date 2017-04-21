@@ -47,4 +47,8 @@ void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
                             Region** region, int** resourceCount);
 void validateUse(int argc, char* argv[]);
 void cleanMemory(int (**buff1Ptr)[NINE][NINE], int **buff2Ptr, int** countPtr,
-                    sem_t **semaphores, Region **region, int** resourceCount);
+                    sem_t **semaphores, Region **region, int** resourceCount,
+                         int buff1FD, int buff2FD, int counterFD, int semFD, 
+                            int regionFD, int resFD);
+
+

@@ -19,6 +19,14 @@ int main (int argc, char* argv[])
 
     // Shared memory pointers
     int *buff2Ptr, *countPtr, *resourceCount, (*buff1Ptr)[NINE][NINE];
+    
+    // Generate random maxDelay
+    srand((unsigned) time(NULL));
+
+printf("MAXDELAY :%d\n", maxDelay);
+    maxDelay = rand() % maxDelay;
+
+printf("MAXDELAY :%d\n", maxDelay);
 
     // Create shared memory
     initMemory( &buff1FD, &buff2FD, &counterFD, &semFD, &regionFD, &resFD);
@@ -70,7 +78,7 @@ int main (int argc, char* argv[])
     if( pid == 0) // Child process
     {
         childManager(region, semaphores, buff1Ptr, buff2Ptr, countPtr,
-                            resourceCount,  processNum, numbers );
+                            resourceCount,  processNum, numbers, maxDelay );
     }
     else if ( pid > 0) // Parent process
     {
@@ -172,7 +180,7 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
 
     while( !done )
     {
-        printf("Parent Waiting for Children\n");
+        //printf("Parent Waiting for Children\n");
         sem_wait(&(semaphores[1]));
         sem_wait(&(semaphores[0]));
         if ( *resourceCount == 0)
@@ -247,7 +255,7 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
 
 void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE],
                     int *buff2Ptr, int* countPtr, int* resourceCount,
-                        int processNum, int *numbers )
+                        int processNum, int *numbers, int maxDelay )
 {
     char format[500];
     int numValid;
@@ -263,7 +271,8 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
                 numbers[((*buff1Ptr)[processNum-1][i])-1]++;
 
             }
-
+            
+            sleep(maxDelay);
             sem_wait(&(semaphores[0]));//Mutex lock
 
 
@@ -316,6 +325,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 
 	        }
 
+            sleep(maxDelay);
 	        sprintf(format + strlen(format), "are invalid\n");
 			sem_wait(&(semaphores[0]));//Empty lock
 
@@ -372,6 +382,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 
             }
 
+            sleep(maxDelay);
 		    sprintf(format+strlen(format), "is invalid\n");
             sem_wait(&(semaphores[0]));//Mutex lock
             region[processNum-1].type = SUB_REGION;

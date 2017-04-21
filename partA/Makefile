@@ -24,4 +24,4 @@ clean:
 	rm -f $(EXEC1) $(OBJ1) logfile
 
 run:
-	./$(EXEC1) ../testFiles/specTest.txt 1
+	./$(EXEC1) ../testFiles/specTest.txt 10

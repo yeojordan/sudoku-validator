@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-
+#include <time.h>
 
 #define NINE 9
 #define SUB 3
@@ -37,7 +37,8 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
                         int* resourceCount );
 void childManager(Region *region, sem_t *semaphores,
                     int (*buff1Ptr)[NINE][NINE], int *buff2Ptr, int* countPtr,
-                        int* resourceCount, int processNum, int *numbers );
+                        int* resourceCount, int processNum, int *numbers, 
+                            int maxDelay );
 void initMemory( int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
                     int* regionFD, int* resFD);
 void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,

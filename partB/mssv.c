@@ -153,7 +153,7 @@ void writeFile(Region* region, char* format)
         exit(1);
     }
 
-    fprintf(outFile, "process ID-%d: %s",region->tid, format);
+    fprintf(outFile, "thread ID-%d: %s",region->tid, format);
 
     fclose(outFile); // Close file
 }
@@ -266,6 +266,7 @@ void* childManager(void* args )
     int numValid;
     Region* region = ((Region*)(args));
     int threadNum = region->position;
+    int comma = 0;
 
 	    if( region->type == ROW ) // Check row in buffer1
         {
@@ -308,7 +309,6 @@ void* childManager(void* args )
         else if( region->type == COL ) // Check all columns
         {
             sprintf(format, "column ");
-
 	        int validCol = 0;
 	        for ( int nn = 0; nn < NINE; nn++) // Iterate through each column
 	        {
@@ -325,7 +325,15 @@ void* childManager(void* args )
 	            }
                 else
                 {
-                    sprintf(format + strlen(format), "%d, ", nn+1);
+                    if (comma == 0)
+                    {
+                        comma = 1;
+                        sprintf(format + strlen(format), "%d", nn+1);
+                    }    
+                    else
+                    {
+                        sprintf(format + strlen(format), ", %d ", nn+1); 
+                    }
                 }
 
 		        resetArray(region->numbers);
@@ -333,7 +341,14 @@ void* childManager(void* args )
 	        }
 
             sleep(maxDelay);
-	        sprintf(format + strlen(format), "are invalid\n");
+	        if (validCol == 8)
+            {
+                sprintf(format + strlen(format), " is invalid\n");
+            }
+            else
+            {
+                sprintf(format + strlen(format), "are invalid\n");
+            }
             pthread_mutex_lock(&mutex); // Lock mutex
 
             // Update region struct
@@ -355,7 +370,7 @@ void* childManager(void* args )
         else if( region->type == SUB_GRID ) // Check all sub-grids
         {
             sprintf(format, "sub-grid ");
-
+            
             int validSub = 0;
 
             // Iterate through each of the 9 3x3 sub-grid
@@ -378,9 +393,17 @@ void* childManager(void* args )
 	   	            }
                     else // Update string for log file
                     {
-                        sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
+                        if (comma == 0)
+                        {
+                            comma = 1;
+                            sprintf(format+strlen(format), "[%d..%d, %d..%d]",
                                     jj+1, jj+3, kk+1, kk+3);
-
+                        }
+                        else
+                        {
+                            sprintf(format+strlen(format), ", [%d..%d, %d..%d]",
+                                    jj+1, jj+3, kk+1, kk+3);
+                        }
                     }
 		            resetArray(region->numbers);
 	            }
@@ -388,7 +411,14 @@ void* childManager(void* args )
             }
 
             sleep(maxDelay);
-		    sprintf(format+strlen(format), "is invalid\n");
+            if( validSub == 8)
+            {
+		        sprintf(format+strlen(format), " is invalid\n");
+            }
+            else
+            {              
+		        sprintf(format+strlen(format), " are invalid\n");
+            }
             pthread_mutex_lock(&mutex); // Lock mutex
 
             // Update region struct

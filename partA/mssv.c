@@ -130,11 +130,7 @@ void readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols])
         for ( j = 0; j < cols; j++ )
         {
             fscanf( inStrm, "%d", &(*(buffer))[i][j] );
-
-            // DEBUGGING
-            printf("%d ", (*buffer)[i][j]);
         }
-        printf("\n");
     }
 
     fclose(inStrm); // Close file
@@ -302,7 +298,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
                         int processNum, int *numbers, int maxDelay )
 {
     char format[500];
-    int numValid;
+    int numValid, comma = 0;
 
 	    if( processNum <= 9) // Check a row in buffer1
         {
@@ -357,14 +353,29 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 	            }
                 else
                 {
-                    sprintf(format + strlen(format), "%d, ", nn+1);
+                    if (comma == 0)
+                    {
+                        comma = 1;
+                        sprintf(format + strlen(format), "%d", nn+1);
+                    }
+                    else
+                    {
+                        sprintf(format + strlen(format), ", %d ", nn+1);
+                    }
                 }
 
 		        resetArray(numbers);
 	        }
 
             sleep(maxDelay);
-	        sprintf(format + strlen(format), "are invalid\n");
+            if (validCol == 8)
+            {
+	            sprintf(format + strlen(format), " is invalid\n");
+            }
+            else
+            {
+	            sprintf(format + strlen(format), "are invalid\n");
+            }
 			sem_wait(&(semaphores[0])); //Lock mutex
 
             // Update region struct
@@ -410,9 +421,17 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 	   	            }
                     else // Update string for log file
                     {
-                        sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
-                                    jj+1, jj+3, kk+1, kk+3);
-
+                        if (comma == 0)
+                        {
+                            comma = 1; 
+                            sprintf(format+strlen(format), "[%d..%d, %d..%d]",
+                                        jj+1, jj+3, kk+1, kk+3);
+                        }
+                        else
+                        {
+                            sprintf(format+strlen(format), ", [%d..%d, %d..%d] ",
+                                        jj+1, jj+3, kk+1, kk+3);
+                        }
                     }
 		            resetArray(numbers);
 	            }
@@ -420,7 +439,14 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
             }
 
             sleep(maxDelay);
-		    sprintf(format+strlen(format), "is invalid\n");
+            if (validSub == 8)
+            {
+		        sprintf(format+strlen(format), " is invalid\n");
+            }
+            else
+            {
+		        sprintf(format+strlen(format), "are invalid\n");
+            }
             sem_wait(&(semaphores[0])); //Lock mutex
 
             // Update region struct

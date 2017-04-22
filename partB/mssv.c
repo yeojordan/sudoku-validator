@@ -1,11 +1,11 @@
 #include "mssv.h"
 
 pthread_mutex_t mutex; // Mutex
-pthread_cond_t inUse;  // condition for if the global variable is in use
+pthread_cond_t use;  // condition for if the global variable is in use
 
 
-int **buff1, *buff2, *counter;
-Region **regions;
+int **buff1, *buff2, *counter, maxDelay, inUse;
+Region *regions;
 
 int main (int argc, char* argv[])
 {
@@ -14,11 +14,11 @@ int main (int argc, char* argv[])
 
     // Rename command line parameters
     char* inputFile = argv[1];
-    int maxDelay = atoi(argv[2]);
+    maxDelay = atoi(argv[2]);
 
     // Variables
     int i, pid, processNum, numbers[] = {0,0,0,0,0,0,0,0,0};
-
+    pthread_t threads[11];
     
     // Generate random maxDelay
     srand((unsigned) time(NULL));
@@ -29,11 +29,41 @@ printf("MAXDELAY :%d\n", maxDelay);
 printf("MAXDELAY :%d\n", maxDelay);
 
     // Allocate  memory
-    initMemory( &buff1, &buff2, &counter);
+    initMemory( &buff1, &buff2, &counter, &regions);
     
+
+    *counter = 0; 
     // Read input file 
     readFile(inputFile, NINE, NINE, &buff1);
 
+    pthread_mutex_init(&mutex, NULL); 
+    pthread_cond_init(&use, NULL);
+    inUse = FALSE; 
+    // Create threads
+    for(int i = 0; i < NUMTHREADS; i++)
+    {
+       if ( i < NINE)
+       {
+           regions[i].type = ROW;
+       }
+       else if( i == NINE)
+       {
+           regions[i].type = COL;
+       }
+       else
+       {
+           regions[i].type = SUB_GRID;    
+       }
+       
+       regions[i].position = i;
+       resetArray(regions[i].numbers);
+       pthread_create(&(threads[i]), NULL, childManager, &(regions[i]));
+       inUse++;
+    }
+    
+
+    parentManager(threads);
+    
 
 /*    // Map shared memory to pointers
     mapMemory(&buff1FD, &buff2FD, &counterFD, &semFD, &regionFD, &resFD,
@@ -100,7 +130,7 @@ printf("MAXDELAY :%d\n", maxDelay);
     cleanMemory();
 }
 
-void initMemory(int*** buff1, int** buff2, int** counter)
+void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
 {
     *buff1 = (int**) malloc(sizeof(int*)* NINE);
     for (int i = 0; i < NINE; i++)
@@ -110,6 +140,7 @@ void initMemory(int*** buff1, int** buff2, int** counter)
 
     *buff2 = (int*) malloc(sizeof(int)* NUMTHREADS);
     *counter = (int*) malloc(sizeof(int));
+    *regions = (Region*) malloc(sizeof(Region)* NUMTHREADS);
 }
 
 
@@ -125,6 +156,7 @@ void cleanMemory()
     free(buff1);
     free(buff2);
     free(counter);
+    free(regions);
 }
 
 
@@ -161,7 +193,6 @@ void readFile(char* inputFile, int rows, int cols, int***buffer )
 
 }
 
-/*
 void writeFile(Region* region, char* format)
 {
     char* filename = "logfile";
@@ -175,7 +206,7 @@ void writeFile(Region* region, char* format)
         exit(1);
     }
 
-    fprintf(outFile, "process ID-%d: %s",region->pid, format);
+    fprintf(outFile, "process ID-%d: %s",region->tid, format);
 
     fclose(outFile);
 }
@@ -202,72 +233,69 @@ int checkValid(int numbers[])
     return TRUE;
 }
 
-void parentManager(Region *region, sem_t *semaphores, int* countPtr,
-                        int* resourceCount)
+void parentManager(pthread_t threads[] )
 {
     char *type, *message;
-    sem_post(&(semaphores[1]));
+    
     int done = FALSE;
 	int position;
-
-    while( !done )
+/*
+    for(int ii = 0; ii < NUMTHREADS; ii++)
     {
-        //printf("Parent Waiting for Children\n");
-        sem_wait(&(semaphores[1]));
-        sem_wait(&(semaphores[0]));
-        if ( *resourceCount == 0)
-        {
-            done = TRUE;
-            printf("DONE\n");
-        }
-        sem_post(&(semaphores[0]));
-        sem_post(&(semaphores[1]));
-
+        printf("JOIN\n");
+        pthread_join(threads[ii], NULL);
     }
 
-
-    for(int ii = 0; ii < 11; ii++)
+*/
+    pthread_mutex_lock(&mutex);
+    while ( inUse > 0 ) // While children executing wait
     {
+        pthread_cond_wait(&use, &mutex);
+    }
 
+    pthread_cond_signal(&use);
+    pthread_mutex_unlock(&mutex);
+    
+   
+    printf("CHILDREN DONE\n");
 
-
-        sem_wait(&(semaphores[0]));//Lock mutex
-        if (region[ii].type == ROW)
+    for(int ii = 0; ii < NUMTHREADS; ii++)
+    {    
+        pthread_mutex_lock(&mutex);
+        
+        if (regions[ii].type == ROW)
         {
             type = "row";
-		    position = region[ii].positionX;
-            if ( region[ii].valid == TRUE)
+		    position = regions[ii].position;
+            if ( regions[ii].valid == TRUE)
 	        {
-	            printf("Validation result from process ID-%d: %s %d is valid\n",
-                                      	region[ii].pid,type, position);
+	            printf("Validation result from thread ID%d: %s %d is valid\n",
+                                      	regions[ii].tid,type, position+1);
           	}
 	      	else
 		    {
-        		printf("Validation result from process ID-%d: %s %d is invalid\n",
-		                   		region[ii].pid, type, position);
+        		printf("Validation result from thread ID%d: %s %d is invalid\n",
+		                   		regions[ii].tid, type, position+1);
 	        }
 
     	    }
-        else if (region[ii].type == COL)
+        else if (regions[ii].type == COL)
         {
             type = "column";
-          	position = region[ii].positionX;
-      		printf("Validation result from process ID-%d: %d out of 9 columns are valid\n",region[ii].pid, region[ii].positionX);
+      		printf("Validation result from thread ID%d: %d out of 9 columns are valid\n",regions[ii].tid, regions[ii].count);
         }
         else
         {
             type = "sub-grid";
-	        position = region[ii].positionX;
-
-	        printf("Validation result from process ID-%d: %d out of 9 sub-grids are valid\n",region[ii].pid, region[ii].positionX);
+	        printf("Validation result from process ID%d: %d out of 9 sub-grids are valid\n",regions[ii].tid, regions[ii].count);
 
         }
 
-        sem_post(&(semaphores[0]));//Unlock mutex
+        pthread_mutex_unlock(&mutex);
     }
 
 
-	if (*countPtr == 27)
+	if (*counter == 27)
 	{
 	     message = "valid";
 	}
@@ -276,7 +304,8 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
 	    message = "invalid";
 	}
 
-	printf("There are %d valid sub-grids, and thus the solution is %s\n", *countPtr, message);
+	printf("There are %d valid sub-grids, and thus the solution is %s\n", *counter, message);
+
 }
 
 
@@ -285,53 +314,56 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
 
 
 
-void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE],
-                    int *buff2Ptr, int* countPtr, int* resourceCount,
-                        int processNum, int *numbers, int maxDelay )
+void* childManager(void* args )
 {
     char format[500];
     int numValid;
+    Region* region = ((Region*)(args));
+    printf("TYPE: %d, POSITION: %d\n", region->type, region->position);
+    int threadNum = region->position;
 
-	    if( processNum <= 9)
-        {
-
+	    if( region->type == ROW )
+        {   
+            
             // Check rows
             for (int i = 0; i < NINE; i++)
             {
-
-                //row = checkRow( numbers, i, 9, buff1Ptr );
-                numbers[((*buff1Ptr)[processNum-1][i])-1]++;
-
+                // Position starts at 0
+                region->numbers[((buff1)[threadNum][i])-1]++;
             }
             
             sleep(maxDelay);
-            sem_wait(&(semaphores[0]));//Mutex lock
-
-
-            region[processNum-1].type = ROW;
-            region[processNum-1].positionX = processNum;
-            region[processNum-1].pid = getpid();
-            region[processNum-1].valid = checkValid(numbers);
+            pthread_mutex_lock(&mutex); // Lock mutex
+            
+            //region[processNum-1].type = ROW;
+            //region[processNum-1].position = processNum;
+            region->tid = pthread_self();
+            region->valid = checkValid(region->numbers);
             // Update buffer2
             numValid = 0;
-            if (region[processNum-1].valid == TRUE)
+            if (region->valid == TRUE)
             {
                 numValid = 1;
+                region->count = numValid;
+printf("ROW %d is valid\n", threadNum+1);
             }
             else // Write to log file
             {
-                sprintf(format, "row %d is invalid\n", processNum);
-                writeFile(&(region[processNum-1]), format);
+                region->count = numValid;
+                sprintf(format, "row %d is invalid\n", threadNum+1);
+                writeFile((region), format);
+printf("%s\n", format);
             }
 
-            buff2Ptr[processNum-1] = numValid;
+            buff2[threadNum] = numValid;
 
-            *countPtr = *countPtr + numValid;
-
-            sem_post(&(semaphores[0]));
+            *counter = *counter + numValid;
+            
+           
+            pthread_mutex_unlock(&mutex); // Unlock mutex
 
         }
-        else if(processNum == 10)
+        else if( region->type == COL )
         {
             sprintf(format, "column ");
             // Check cols
@@ -340,12 +372,13 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 	        {
 	            for(int ii = 0; ii < NINE; ii++)
    	            {
-                    numbers[(*buff1Ptr)[ii][nn]-1]++;
+                    region->numbers[((buff1)[ii][nn])-1]++;
 	            }
 
-                if ( checkValid( numbers) == TRUE )
+                if ( checkValid( region->numbers) == TRUE )
 	            {
 		            validCol++;
+printf("COLUMN %d is valid\n", nn+1);                  
 	            }
                 else
                 {
@@ -353,34 +386,35 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
                 }
 
 
-		        resetArray(numbers);
+		        resetArray(region->numbers);
 
 	        }
 
             sleep(maxDelay);
 	        sprintf(format + strlen(format), "are invalid\n");
-			sem_wait(&(semaphores[0]));//Empty lock
-
-            region[processNum-1].type = COL;
-            region[processNum-1].positionX = validCol;
-            region[processNum-1].pid = getpid();
+            pthread_mutex_lock(&mutex); // Lock mutex
+            
+            //region.type = COL;
+            region->count = validCol;
+            region->tid = pthread_self();
             if(validCol != 9)
             {
-                writeFile(&(region[processNum-1]), format);
+printf("%s\n", format);
+                writeFile((region), format);
             }
             // Update buffer2
-            numValid = region[processNum-1].positionX;
+            numValid = region->count;
 
-            buff2Ptr[processNum-1] = validCol;
+            buff2[threadNum] = validCol;
 
             // Update counter
-            *countPtr = *countPtr + validCol;
+            *counter = *counter + validCol;
 
-            sem_post(&(semaphores[0]));
+            pthread_mutex_unlock(&mutex); // Unlock mutex
 
 
         }
-        else if( processNum == 11)
+        else if( region->type == SUB_GRID )
         {
             sprintf(format, "sub-grid ");
             // Check rows
@@ -389,19 +423,19 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
             {
                 for (int kk = 0; kk < 3; kk++)
 	            {
-
 		            for (int ll = jj*3; ll < jj*3+3; ll++)
     		        {
 		                for (int mm = kk*3; mm < kk*3+3; mm++)
 		                {
-			                numbers[(*buff1Ptr)[ll][mm]-1]++;
+			                region->numbers[((buff1)[ll][mm])-1]++;
 
 		                }
 		            }
 
-	    	        if ( checkValid(numbers) == TRUE )
+	    	        if ( checkValid(region->numbers) == TRUE )
 	    	        {
 		                validSub++;
+printf("SUB-GRID %d-%d is valid\n", jj, kk);                         
 	   	            }
                     else
                     {
@@ -409,93 +443,56 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
                                     jj+1, jj+3, kk+1, kk+3);
 
                     }
-		            resetArray(numbers);
+		            resetArray(region->numbers);
 	            }
 
             }
 
             sleep(maxDelay);
 		    sprintf(format+strlen(format), "is invalid\n");
-            sem_wait(&(semaphores[0]));//Mutex lock
-            region[processNum-1].type = SUB_REGION;
-            region[processNum-1].positionX = validSub;
-            region[processNum-1].pid = getpid();
+            pthread_mutex_lock(&mutex); // Lock mutex
+            region->count= validSub;
+            region->tid = pthread_self();
 
             if(validSub != 9)
             {
-                writeFile(&(region[processNum-1]), format);
+
+printf("%s\n", format);
+                writeFile((region), format);
             }
 
-            buff2Ptr[processNum-1] = validSub;
+            buff2[threadNum] = validSub;
 
             // Update counter
-            *countPtr = *countPtr + validSub;
+            *counter = *counter + validSub;
             //release locks
 
-            sem_post(&(semaphores[0]));
+            pthread_mutex_unlock(&mutex); // Unlock mutex
 
         }
 
 
         // Child signals it is finished by incremented resourceCount
-        sem_wait(&(semaphores[1]));
-        sem_wait(&(semaphores[0]));
-            //printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
-            *resourceCount = *resourceCount - 1;
-        sem_post(&(semaphores[0]));
-        sem_post(&(semaphores[1]));
-
-}
-
-void initMemory( int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
-                    int* regionFD, int* resFD)
-{
-
-    // Create shared memory
-    *buff1FD = shm_open("buffer1", O_CREAT | O_RDWR, 0666);
-    *buff2FD = shm_open("buffer2", O_CREAT | O_RDWR, 0666);
-    *counterFD = shm_open("counter", O_CREAT | O_RDWR, 0666);
-    *semFD = shm_open("semaphores", O_CREAT | O_RDWR, 0666);
-    *regionFD = shm_open("region", O_CREAT | O_RDWR, 0666);
-    *resFD = shm_open("resources", O_CREAT | O_RDWR, 0666);
-
-    // Check shared memory was created correctly
-    if ( *buff1FD == -1 || *buff2FD == -1 || *counterFD == -1 || *semFD == -1 ||
-            *regionFD == -1 || *resFD == -1 )
-    {
-        fprintf( stderr, "Error creating shared memory blocks\n" );
-        exit(1);
-    }
-
-    // Give shared memory blocks a size
-    ftruncate(*buff1FD, sizeof(int) * NINE * NINE);
-    ftruncate(*buff2FD, sizeof(int) * 11);
-    ftruncate(*counterFD, sizeof(int));
-    ftruncate(*semFD, sizeof(sem_t) * 2 );
-    ftruncate(*regionFD, sizeof(Region)*11);
-    ftruncate(*resFD, sizeof(int));
-
+        pthread_mutex_lock(&mutex);
+        
+        while( inUse == 0)
+        {
+            pthread_cond_wait(&use, &mutex);    
+        }
+             //printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
+        
+        inUse--;
+        if (inUse == 0)
+        {
+            pthread_cond_signal(&use);    
+        }
+        
+        pthread_mutex_unlock(&mutex);
+        pthread_detach(pthread_self());
+        pthread_exit(NULL);
 }
 
 
-void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
-                  int* regionFD, int* resFD, int (**buff1Ptr)[NINE][NINE], int (**buff2Ptr),
-                        int** countPtr, sem_t** semaphores, Region** region, int** resourceCount)
-{
-
-
-
-    // Memory mapping
-    *buff2Ptr = (int*) mmap(NULL, sizeof(int)*NINE*NINE, PROT_READ | PROT_WRITE, MAP_SHARED, *buff2FD, 0);
-    *buff1Ptr = mmap(NULL, sizeof(int)*11, PROT_READ | PROT_WRITE, MAP_SHARED, *buff1FD, 0);
-    *countPtr = (int*) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, *counterFD, 0);
-    *semaphores = mmap(NULL, sizeof(sem_t) * 2, PROT_READ | PROT_WRITE, MAP_SHARED, *semFD, 0);
-    *region = mmap(NULL, sizeof(Region)* 11, PROT_READ | PROT_WRITE, MAP_SHARED, *regionFD, 0);
-    *resourceCount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, *resFD, 0);
-
-
-}
-*/
 void validateUse(int argc, char* argv[])
 {
 
@@ -515,46 +512,3 @@ void validateUse(int argc, char* argv[])
 
 }
 
-/*
-void cleanMemory(int (**buff1Ptr)[NINE][NINE], int **buff2Ptr, int** countPtr,
-                         sem_t **semaphores, Region **region, 
-                            int** resourceCount, int buff1FD, int buff2FD, 
-                                int counterFD, int semFD, int regionFD, 
-                                    int resFD )
-{
-    sem_close(&((*semaphores)[0]));
-    sem_close(&((*semaphores)[1]));
-    
-    sem_destroy(&((*semaphores)[0]));
-    sem_destroy(&((*semaphores)[1]));
-
-    // Clean up shared memory
-    shm_unlink("buffer1");
-    shm_unlink("buffer2");
-    shm_unlink("counter");
-    shm_unlink("semaphores");
-    shm_unlink("region");
-    shm_unlink("resources");
-    
-    close(buff1FD);
-    close(buff2FD);
-    close(counterFD);
-    close(semFD);
-    close(regionFD);
-    close(resFD);
-    
-    munmap(*buff1Ptr, sizeof(int)*NINE*NINE);
-    munmap(*buff2Ptr, sizeof(int)*11);
-    munmap(*countPtr, sizeof(int));
-    munmap(*semaphores, sizeof(sem_t)*2);
-    munmap(*region, sizeof(Region)*11);
-    munmap(*resourceCount, sizeof(int));
-
-    shm_unlink("buffer1");
-    shm_unlink("buffer2");
-    shm_unlink("counter");
-    shm_unlink("semaphores");
-    shm_unlink("region");
-    shm_unlink("resources");
-
-}*/

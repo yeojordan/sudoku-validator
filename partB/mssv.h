@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 #define NINE 9
 #define SUB 3
@@ -18,15 +19,16 @@
 #define FALSE 0
 #define TRUE !FALSE
 
-typedef enum {ROW, COL, SUB_REGION} Region_Type;
+typedef enum {ROW, COL, SUB_GRID} Region_Type;
 
 typedef struct
 {
     Region_Type type;
-    int positionX;
+    int position;
     pthread_t tid;
+    int count;
     int valid;
-    int numbers[NINE];// = {0,0,0,0,0,0,0,0,0};
+    int numbers[NINE];
 
 } Region;
 
@@ -35,13 +37,9 @@ void readFile(char* inputFile, int rows, int cols, int***buffer);
 void writeFile(Region* region, char* format);
 void resetArray(int numbers[]);
 int checkValid(int numbers[]);
-void parentManager(Region *region, sem_t *semaphores, int* countPtr,
-                        int* resourceCount );
-void childManager(Region *region, sem_t *semaphores,
-                    int (*buff1Ptr)[NINE][NINE], int *buff2Ptr, int* countPtr,
-                        int* resourceCount, int processNum, int *numbers, 
-                            int maxDelay );
-void initMemory( int*** buff1, int** buff2, int** counter);
+void parentManager(pthread_t threads[] );
+void* childManager(void* args );
+void initMemory( int*** buff1, int** buff2, int** counter, Region** regions);
 void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
                     int* regionFD, int* resFD, int (**buff1Ptr)[NINE][NINE],
                         int (**buff2Ptr), int** countPtr, sem_t** semaphores,

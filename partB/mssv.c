@@ -64,70 +64,9 @@ printf("MAXDELAY :%d\n", maxDelay);
 
     parentManager(threads);
     
-
-/*    // Map shared memory to pointers
-    mapMemory(&buff1FD, &buff2FD, &counterFD, &semFD, &regionFD, &resFD,
-                &buff1Ptr, &buff2Ptr, &countPtr, &semaphores, &region,
-                    &resourceCount);
-
-    // Initialise semaphores
-    if ((sem_init(&semMutex, 1, 1)== 1) ||(sem_init(&semParent, 1, 1) == 1))
-    {
-        fprintf(stderr, "Could not initialise semaphores\n");
-        exit(1);
-    }
-
-    semaphores[0] = semMutex;
-    semaphores[1] = semParent;
-
-    // Initialise parameters
-    *countPtr = 0;
-    pid = -1;
-    processNum = 0;
-
-
-    // Parent aquires lock of resourceCount
-    sem_wait(&(semaphores[1]));
-
-    *resourceCount = 0;
-
-    // Create child processes for rows
-    while( processNum < 11 && pid != 0 )
-    {
-        signal(SIGCHLD, SIG_IGN);
-        pid = fork();
-
-        // Store child's pid in array
-        if ( pid > 0)
-        {
-            printf("Child ID: %d, processNum: %d\n", pid, processNum);
-            *resourceCount = *resourceCount + 1;
-            printf("Parent's resourceCount: %d\n", *resourceCount);
-        }
-        processNum++;
-    }
-
-    if( pid == 0) // Child process
-    {
-        childManager(region, semaphores, buff1Ptr, buff2Ptr, countPtr,
-                            resourceCount,  processNum, numbers, maxDelay );
-    }
-    else if ( pid > 0) // Parent process
-    {
-        parentManager(region, semaphores, countPtr, resourceCount);
-
-
-        // Clean up shared memory
-        cleanMemory(&buff1Ptr, &buff2Ptr, &countPtr, &semaphores,
-                       &region, &resourceCount, buff1FD, buff2FD, counterFD, 
-                            semFD, regionFD, resFD);
-    }
-    else // Unsuccessful child process creation attempt
-    {
-        fprintf(stderr, "Unable to create child processes. Please run \"killall mssv\"\n");
-    }
-*/
     cleanMemory();
+
+
 }
 
 void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
@@ -489,7 +428,7 @@ printf("%s\n", format);
         
         pthread_mutex_unlock(&mutex);
         pthread_detach(pthread_self());
-        pthread_exit(NULL);
+        pthread_cancel(pthread_self());
 }
 
 

@@ -60,7 +60,7 @@ printf("MAXDELAY :%d\n", maxDelay);
     *resourceCount = 0;
 
     // Create child processes for
-    while( processNum < 11 && pid != 0 )
+    while( processNum < NUMPROCESSES && pid != 0 )
     {
         signal(SIGCHLD, SIG_IGN); // Kill zombie processNum-1
         pid = fork();
@@ -219,7 +219,7 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
 
     }
 
-    for(int ii = 0; ii < 11; ii++)
+    for(int ii = 0; ii < NUMPROCESSES; ii++)
     {
         sem_wait(&(semaphores[0])); //Lock mutex
         if (region[ii].type == ROW)
@@ -505,13 +505,42 @@ void initMemory( int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
         exit(1);
     }
 
-    // Give shared memory blocks a size
-    ftruncate(*buff1FD, sizeof(int) * NINE * NINE);
-    ftruncate(*buff2FD, sizeof(int) * 11);
-    ftruncate(*counterFD, sizeof(int));
-    ftruncate(*semFD, sizeof(sem_t) * 2 );
-    ftruncate(*regionFD, sizeof(Region)*11);
-    ftruncate(*resFD, sizeof(int));
+    // Set size of shared memory constructs
+    if ( ftruncate(*buff1FD, sizeof(int) * NINE * NINE) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of buffer1" );
+        exit(1);       
+    }
+    
+    if ( ftruncate(*buff2FD, sizeof(int) * NUMPROCESSES) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of buffer2" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*counterFD, sizeof(int)) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of counter" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*semFD, sizeof(sem_t) * 2 ) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of semaphores" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*regionFD, sizeof(Region)*NUMPROCESSES) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of regions" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*resFD, sizeof(int)) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of resourceCount" ); 
+        exit(1);
+    }
 }
 
 /**
@@ -535,10 +564,10 @@ void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
 {
     // Memory mapping
     *buff2Ptr = (int*) mmap(NULL, sizeof(int)*NINE*NINE, PROT_READ | PROT_WRITE, MAP_SHARED, *buff2FD, 0);
-    *buff1Ptr = mmap(NULL, sizeof(int)*11, PROT_READ | PROT_WRITE, MAP_SHARED, *buff1FD, 0);
+    *buff1Ptr = mmap(NULL, sizeof(int)*NUMPROCESSES, PROT_READ | PROT_WRITE, MAP_SHARED, *buff1FD, 0);
     *countPtr = (int*) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, *counterFD, 0);
     *semaphores = mmap(NULL, sizeof(sem_t) * 2, PROT_READ | PROT_WRITE, MAP_SHARED, *semFD, 0);
-    *region = mmap(NULL, sizeof(Region)* 11, PROT_READ | PROT_WRITE, MAP_SHARED, *regionFD, 0);
+    *region = mmap(NULL, sizeof(Region)*NUMPROCESSES, PROT_READ | PROT_WRITE, MAP_SHARED, *regionFD, 0);
     *resourceCount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, *resFD, 0);
 }
 
@@ -611,10 +640,10 @@ void cleanMemory(int (**buff1Ptr)[NINE][NINE], int **buff2Ptr, int** countPtr,
 
     // Unmap memory
     munmap(*buff1Ptr, sizeof(int)*NINE*NINE);
-    munmap(*buff2Ptr, sizeof(int)*11);
+    munmap(*buff2Ptr, sizeof(int)*NUMPROCESSES);
     munmap(*countPtr, sizeof(int));
     munmap(*semaphores, sizeof(sem_t)*2);
-    munmap(*region, sizeof(Region)*11);
+    munmap(*region, sizeof(Region)*NUMPROCESSES);
     munmap(*resourceCount, sizeof(int));
 
     // Unlink shared memory constructs

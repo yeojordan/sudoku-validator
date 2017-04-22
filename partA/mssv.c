@@ -399,6 +399,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
     		        {
 		                for (int mm = kk*3; mm < kk*3+3; mm++)
 		                {
+                            // Update numbers array
 			                numbers[(*buff1Ptr)[ll][mm]-1]++;
 		                }
 		            }

@@ -17,59 +17,68 @@ int main (int argc, char* argv[])
 
     // Variables
     pthread_t threads[11];
-    
+
     // Generate random maxDelay
     srand((unsigned) time(NULL));
-
     maxDelay = rand() % maxDelay;
 
     // Allocate  memory
     initMemory( &buff1, &buff2, &counter, &regions);
-    
-    *counter = 0; 
-    // Read input file 
+
+    *counter = 0;
+    // Read input file
     readFile(inputFile, NINE, NINE, &buff1);
 
-    pthread_mutex_init(&mutex, NULL); 
+    // Initialise mutex and condition
+    pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&use, NULL);
     inUse = 0;
-     
+
     // Create threads
     for(int i = 0; i < NUMTHREADS; i++)
     {
-       if ( i < NINE)
+       if ( i < NINE) // Initialise region struct for row threads
        {
            regions[i].type = ROW;
        }
-       else if( i == NINE)
+       else if( i == NINE) // Initialise region struct for columns thread
        {
            regions[i].type = COL;
        }
-       else
+       else // Initialise region struct for sub-grids thread
        {
-           regions[i].type = SUB_GRID;    
+           regions[i].type = SUB_GRID;
        }
-       
+
        regions[i].position = i;
        resetArray(regions[i].numbers);
+       // Create thread
        pthread_create(&(threads[i]), NULL, childManager, &(regions[i]));
        inUse++;
     }
-    
-    parentManager(threads);
-    
-    cleanMemory();
+
+    parentManager(threads); // Parent logic
+
+    cleanMemory(); // Clean up malloc'd memory
 
 }
 
 /******************************************************************************/
 
+/**
+ * Initalise memory constructs
+ * @param buff1   buffer1 2D array
+ * @param buff2   buffer2 1D array
+ * @param counter counter variable
+ * @param regions Region struct 1D array
+ */
 void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
 {
+    // Initialise 
     *buff1 = (int**) malloc(sizeof(int*)* NINE);
     for (int i = 0; i < NINE; i++)
     {
-        (*buff1)[i] = (int*) malloc(sizeof(int)* NINE);   
+        (*buff1)[i] = (int*) malloc(sizeof(int)* NINE);
     }
     *buff2 = (int*) malloc(sizeof(int)* NUMTHREADS);
     *counter = (int*) malloc(sizeof(int));
@@ -77,16 +86,17 @@ void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
 }
 
 
-
- 
+/**
+ * Free malloc'd memory and destroy mutex and conditions
+ */
 void cleanMemory()
 {
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&use);
     for (int i = 0; i < NINE; i++)
     {
-        free(buff1[i]);    
-    }   
+        free(buff1[i]);
+    }
     free(buff1);
     free(buff2);
     free(counter);
@@ -94,21 +104,28 @@ void cleanMemory()
 }
 
 
-
-
+/**
+ * Read the contents of the input file passed as a command line argument
+ * @param inputFile File to be read
+ * @param rows      Number of rows in matrix
+ * @param cols      Number of columns in matrix
+ * @param buffer    Matrix to store contents of input file
+ */
 void readFile(char* inputFile, int rows, int cols, int***buffer )
 {
     FILE* inStrm;
     int i, j;
 
-    inStrm = fopen(inputFile, "r");
+    inStrm = fopen(inputFile, "r"); // Open file for reading
 
-    if (inStrm == NULL)
+    if (inStrm == NULL) // Check file opened correctly
     {
         perror("Error opening file for reading\n");
         exit(1);
     }
     printf("%d, %d\n", rows, cols);
+
+    // Store contents of file in 2D array
     for( i = 0; i < rows; i++ )
     {
         for ( j = 0; j < cols; j++ )
@@ -121,19 +138,22 @@ void readFile(char* inputFile, int rows, int cols, int***buffer )
         printf("\n");
     }
 
-    fclose(inStrm);
-
-
+    fclose(inStrm); // Close file
 }
 
+/**
+ * Write the invalid regions to log file
+ * @param region Sub region
+ * @param format String to be written
+ */
 void writeFile(Region* region, char* format)
 {
     char* filename = "logfile";
     FILE* outFile;
     int val;
 
-    outFile = fopen(filename, "a");
-    if (outFile == NULL)
+    outFile = fopen(filename, "a"); // Open file for appending
+    if (outFile == NULL) // Check file opened correctly
     {
         perror("Error opening file for writing\n");
         exit(1);
@@ -141,9 +161,13 @@ void writeFile(Region* region, char* format)
 
     fprintf(outFile, "process ID-%d: %s",region->tid, format);
 
-    fclose(outFile);
+    fclose(outFile); // Close file
 }
 
+/**
+ * Set each index to zero
+ * @param numbers Array to be reset
+ */
 void resetArray(int numbers[])
 {
     for (int i = 0; i < NINE; i++)
@@ -152,7 +176,11 @@ void resetArray(int numbers[])
     }
 }
 
-
+/**
+ * Check if the contents of the array has any value other than one
+ * @param  numbers Array to be checked
+ * @return         Status of array being valid or not
+ */
 int checkValid(int numbers[])
 {
     for (int j = 0; j < NINE; j++)
@@ -166,28 +194,32 @@ int checkValid(int numbers[])
     return TRUE;
 }
 
+/**
+ * Handles the routine for the parent. Outputs the result to the screen
+ * @param threads ID of child threads
+ */
 void parentManager(pthread_t threads[] )
 {
     char *type, *message;
     int done = FALSE;
 	int position;
 
-    pthread_mutex_lock(&mutex);
-    while ( inUse > 0 ) // While children executing wait
+    pthread_mutex_lock(&mutex); // Lock mutex
+    while ( inUse > 0 ) // Wait while children are executing
     {
         pthread_cond_wait(&use, &mutex);
     }
 
     pthread_cond_signal(&use);
-    pthread_mutex_unlock(&mutex);
-    
-   
+    pthread_mutex_unlock(&mutex); // Unlock mutex
+
+
     printf("CHILDREN DONE\n");
 
     for(int ii = 0; ii < NUMTHREADS; ii++)
-    {    
-        pthread_mutex_lock(&mutex);
-        
+    {
+        pthread_mutex_lock(&mutex); // Lock mutex
+
         if (regions[ii].type == ROW)
         {
             type = "row";
@@ -233,12 +265,10 @@ void parentManager(pthread_t threads[] )
 
 }
 
-
-
-
-
-
-
+/**
+ * Routine for child threads. Check the validity of sub region.
+ * @param args Void pointer to Region struct for the child
+ */
 void* childManager(void* args )
 {
     char format[500];
@@ -246,22 +276,23 @@ void* childManager(void* args )
     Region* region = ((Region*)(args));
     int threadNum = region->position;
 
-	    if( region->type == ROW )
-        {   
-            
+	    if( region->type == ROW ) // Check row in buffer1
+        {
+
             // Check rows
             for (int i = 0; i < NINE; i++)
             {
-                // Position starts at 0
+                // Update numbers array
                 region->numbers[((buff1)[threadNum][i])-1]++;
             }
-            
-            sleep(maxDelay);
+
+            sleep(maxDelay); // Sleep
             pthread_mutex_lock(&mutex); // Lock mutex
-            
+
+            // Update region struct
             region->tid = pthread_self();
             region->valid = checkValid(region->numbers);
-            
+
             // Update buffer2
             numValid = 0;
             if (region->valid == TRUE)
@@ -276,25 +307,27 @@ void* childManager(void* args )
                 writeFile((region), format);
             }
 
-            buff2[threadNum] = numValid;
+            buff2[threadNum] = numValid; // Update buffer2
 
-            *counter = *counter + numValid;
-            
+            *counter = *counter + numValid; // Update counter
+
             pthread_mutex_unlock(&mutex); // Unlock mutex
 
         }
-        else if( region->type == COL )
+        else if( region->type == COL ) // Check all columns
         {
             sprintf(format, "column ");
-            // Check cols
+
 	        int validCol = 0;
-	        for ( int nn = 0; nn < NINE; nn++)
+	        for ( int nn = 0; nn < NINE; nn++) // Iterate through each column
 	        {
-	            for(int ii = 0; ii < NINE; ii++)
+	            for(int ii = 0; ii < NINE; ii++) // Iterate through each row
    	            {
+                    // Update numbers array
                     region->numbers[((buff1)[ii][nn])-1]++;
 	            }
 
+                // Check if the column is valid
                 if ( checkValid( region->numbers) == TRUE )
 	            {
 		            validCol++;
@@ -311,7 +344,8 @@ void* childManager(void* args )
             sleep(maxDelay);
 	        sprintf(format + strlen(format), "are invalid\n");
             pthread_mutex_lock(&mutex); // Lock mutex
-            
+
+            // Update region struct
             region->count = validCol;
             region->tid = pthread_self();
             if(validCol != 9)
@@ -319,21 +353,21 @@ void* childManager(void* args )
                 writeFile((region), format);
             }
 
-            // Update buffer2
             numValid = region->count;
 
-            buff2[threadNum] = validCol;
+            buff2[threadNum] = validCol; // Update buffer2
 
-            // Update counter
-            *counter = *counter + validCol;
+            *counter = *counter + validCol; // Update counter
 
             pthread_mutex_unlock(&mutex); // Unlock mutex
         }
-        else if( region->type == SUB_GRID )
+        else if( region->type == SUB_GRID ) // Check all sub-grids
         {
             sprintf(format, "sub-grid ");
-            // Check rows
+
             int validSub = 0;
+
+            // Iterate through each of the 9 3x3 sub-grid
             for ( int jj = 0; jj < 3; jj++)
             {
                 for (int kk = 0; kk < 3; kk++)
@@ -342,8 +376,8 @@ void* childManager(void* args )
     		        {
 		                for (int mm = kk*3; mm < kk*3+3; mm++)
 		                {
+                            // Update numbers array
 			                region->numbers[((buff1)[ll][mm])-1]++;
-
 		                }
 		            }
 
@@ -351,7 +385,7 @@ void* childManager(void* args )
 	    	        {
 		                validSub++;
 	   	            }
-                    else
+                    else // Update string for log file
                     {
                         sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
                                     jj+1, jj+3, kk+1, kk+3);
@@ -365,6 +399,8 @@ void* childManager(void* args )
             sleep(maxDelay);
 		    sprintf(format+strlen(format), "is invalid\n");
             pthread_mutex_lock(&mutex); // Lock mutex
+
+            // Update region struct
             region->count= validSub;
             region->tid = pthread_self();
 
@@ -373,37 +409,39 @@ void* childManager(void* args )
                 writeFile((region), format);
             }
 
-            buff2[threadNum] = validSub;
+            buff2[threadNum] = validSub; // Update buffer2
 
-            // Update counter
-            *counter = *counter + validSub;
+            *counter = *counter + validSub; // Update counter
 
             pthread_mutex_unlock(&mutex); // Unlock mutex
 
         }
 
         // Child signals it is finished by incremented resourceCount
-        pthread_mutex_lock(&mutex);
-        
+        pthread_mutex_lock(&mutex); // Lock mutex
+
         while( inUse == 0)
         {
-            pthread_cond_wait(&use, &mutex);    
+            pthread_cond_wait(&use, &mutex);
         }
-        
-        inUse--;
+        inUse--; // Decrease count of child processes running
         if (inUse == 0)
         {
-            pthread_cond_signal(&use);    
+            pthread_cond_signal(&use);
         }
-        
-        pthread_mutex_unlock(&mutex);
-        pthread_detach(pthread_self());
-       
+        pthread_mutex_unlock(&mutex); // Unlock mutex
+        pthread_detach(pthread_self()); // Release resources
+
 }
 
-
+/**
+ * Validate command line parameters
+ * @param argc number of parameters
+ * @param argv command line parameters
+ */
 void validateUse(int argc, char* argv[])
 {
+    // Ensure correct number of command line parameters
     if (argc != 3)
     {
         printf("Ensure there are the correct number of parameters\n");
@@ -417,4 +455,3 @@ void validateUse(int argc, char* argv[])
         exit(1);
     }
 }
-

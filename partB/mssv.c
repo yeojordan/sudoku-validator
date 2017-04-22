@@ -3,7 +3,6 @@
 pthread_mutex_t mutex; // Mutex
 pthread_cond_t use;  // condition for if the global variable is in use
 
-
 int **buff1, *buff2, *counter, maxDelay, inUse;
 Region *regions;
 
@@ -17,28 +16,24 @@ int main (int argc, char* argv[])
     maxDelay = atoi(argv[2]);
 
     // Variables
-    int i, pid, processNum, numbers[] = {0,0,0,0,0,0,0,0,0};
     pthread_t threads[11];
     
     // Generate random maxDelay
     srand((unsigned) time(NULL));
 
-printf("MAXDELAY :%d\n", maxDelay);
     maxDelay = rand() % maxDelay;
-
-printf("MAXDELAY :%d\n", maxDelay);
 
     // Allocate  memory
     initMemory( &buff1, &buff2, &counter, &regions);
     
-
     *counter = 0; 
     // Read input file 
     readFile(inputFile, NINE, NINE, &buff1);
 
     pthread_mutex_init(&mutex, NULL); 
     pthread_cond_init(&use, NULL);
-    inUse = FALSE; 
+    inUse = 0;
+     
     // Create threads
     for(int i = 0; i < NUMTHREADS; i++)
     {
@@ -61,13 +56,13 @@ printf("MAXDELAY :%d\n", maxDelay);
        inUse++;
     }
     
-
     parentManager(threads);
     
     cleanMemory();
 
-
 }
+
+/******************************************************************************/
 
 void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
 {
@@ -76,7 +71,6 @@ void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
     {
         (*buff1)[i] = (int*) malloc(sizeof(int)* NINE);   
     }
-
     *buff2 = (int*) malloc(sizeof(int)* NUMTHREADS);
     *counter = (int*) malloc(sizeof(int));
     *regions = (Region*) malloc(sizeof(Region)* NUMTHREADS);
@@ -87,7 +81,8 @@ void initMemory(int*** buff1, int** buff2, int** counter, Region** regions)
  
 void cleanMemory()
 {
-    
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&use);
     for (int i = 0; i < NINE; i++)
     {
         free(buff1[i]);    
@@ -100,7 +95,6 @@ void cleanMemory()
 
 
 
-/******************************************************************************/
 
 void readFile(char* inputFile, int rows, int cols, int***buffer )
 {
@@ -175,17 +169,9 @@ int checkValid(int numbers[])
 void parentManager(pthread_t threads[] )
 {
     char *type, *message;
-    
     int done = FALSE;
 	int position;
-/*
-    for(int ii = 0; ii < NUMTHREADS; ii++)
-    {
-        printf("JOIN\n");
-        pthread_join(threads[ii], NULL);
-    }
 
-*/
     pthread_mutex_lock(&mutex);
     while ( inUse > 0 ) // While children executing wait
     {
@@ -258,7 +244,6 @@ void* childManager(void* args )
     char format[500];
     int numValid;
     Region* region = ((Region*)(args));
-    printf("TYPE: %d, POSITION: %d\n", region->type, region->position);
     int threadNum = region->position;
 
 	    if( region->type == ROW )
@@ -274,31 +259,27 @@ void* childManager(void* args )
             sleep(maxDelay);
             pthread_mutex_lock(&mutex); // Lock mutex
             
-            //region[processNum-1].type = ROW;
-            //region[processNum-1].position = processNum;
             region->tid = pthread_self();
             region->valid = checkValid(region->numbers);
+            
             // Update buffer2
             numValid = 0;
             if (region->valid == TRUE)
             {
                 numValid = 1;
                 region->count = numValid;
-printf("ROW %d is valid\n", threadNum+1);
             }
             else // Write to log file
             {
                 region->count = numValid;
                 sprintf(format, "row %d is invalid\n", threadNum+1);
                 writeFile((region), format);
-printf("%s\n", format);
             }
 
             buff2[threadNum] = numValid;
 
             *counter = *counter + numValid;
             
-           
             pthread_mutex_unlock(&mutex); // Unlock mutex
 
         }
@@ -317,13 +298,11 @@ printf("%s\n", format);
                 if ( checkValid( region->numbers) == TRUE )
 	            {
 		            validCol++;
-printf("COLUMN %d is valid\n", nn+1);                  
 	            }
                 else
                 {
                     sprintf(format + strlen(format), "%d, ", nn+1);
                 }
-
 
 		        resetArray(region->numbers);
 
@@ -333,14 +312,13 @@ printf("COLUMN %d is valid\n", nn+1);
 	        sprintf(format + strlen(format), "are invalid\n");
             pthread_mutex_lock(&mutex); // Lock mutex
             
-            //region.type = COL;
             region->count = validCol;
             region->tid = pthread_self();
             if(validCol != 9)
             {
-printf("%s\n", format);
                 writeFile((region), format);
             }
+
             // Update buffer2
             numValid = region->count;
 
@@ -350,8 +328,6 @@ printf("%s\n", format);
             *counter = *counter + validCol;
 
             pthread_mutex_unlock(&mutex); // Unlock mutex
-
-
         }
         else if( region->type == SUB_GRID )
         {
@@ -374,7 +350,6 @@ printf("%s\n", format);
 	    	        if ( checkValid(region->numbers) == TRUE )
 	    	        {
 		                validSub++;
-printf("SUB-GRID %d-%d is valid\n", jj, kk);                         
 	   	            }
                     else
                     {
@@ -395,8 +370,6 @@ printf("SUB-GRID %d-%d is valid\n", jj, kk);
 
             if(validSub != 9)
             {
-
-printf("%s\n", format);
                 writeFile((region), format);
             }
 
@@ -404,12 +377,10 @@ printf("%s\n", format);
 
             // Update counter
             *counter = *counter + validSub;
-            //release locks
 
             pthread_mutex_unlock(&mutex); // Unlock mutex
 
         }
-
 
         // Child signals it is finished by incremented resourceCount
         pthread_mutex_lock(&mutex);
@@ -418,7 +389,6 @@ printf("%s\n", format);
         {
             pthread_cond_wait(&use, &mutex);    
         }
-             //printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
         
         inUse--;
         if (inUse == 0)
@@ -428,14 +398,12 @@ printf("%s\n", format);
         
         pthread_mutex_unlock(&mutex);
         pthread_detach(pthread_self());
-        pthread_cancel(pthread_self());
+       
 }
 
 
 void validateUse(int argc, char* argv[])
 {
-
-
     if (argc != 3)
     {
         printf("Ensure there are the correct number of parameters\n");
@@ -448,6 +416,5 @@ void validateUse(int argc, char* argv[])
         printf("The maxDelay must be non-negative\n");
         exit(1);
     }
-
 }
 

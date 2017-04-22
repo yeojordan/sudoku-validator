@@ -57,7 +57,7 @@ int main (int argc, char* argv[])
        inUse++;
     }
 
-    parentManager(threads); // Parent logic
+    parentManager(); // Parent logic
 
     cleanMemory(); // Clean up malloc'd memory
 
@@ -123,7 +123,6 @@ void readFile(char* inputFile, int rows, int cols, int***buffer )
         perror("Error opening file for reading\n");
         exit(1);
     }
-    printf("%d, %d\n", rows, cols);
 
     // Store contents of file in 2D array
     for( i = 0; i < rows; i++ )
@@ -131,13 +130,8 @@ void readFile(char* inputFile, int rows, int cols, int***buffer )
         for ( j = 0; j < cols; j++ )
         {
             fscanf( inStrm, "%d", &(*(buffer))[i][j] );
-
-            // DEBUGGING
-            printf("%d ", (*buffer)[i][j]);
         }
-        printf("\n");
     }
-
     fclose(inStrm); // Close file
 }
 
@@ -198,7 +192,7 @@ int checkValid(int numbers[])
  * Handles the routine for the parent. Outputs the result to the screen
  * @param threads ID of child threads
  */
-void parentManager(pthread_t threads[] )
+void parentManager()
 {
     char *type, *message;
     int done = FALSE;
@@ -212,9 +206,6 @@ void parentManager(pthread_t threads[] )
 
     pthread_cond_signal(&use);
     pthread_mutex_unlock(&mutex); // Unlock mutex
-
-
-    printf("CHILDREN DONE\n");
 
     for(int ii = 0; ii < NUMTHREADS; ii++)
     {

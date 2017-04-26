@@ -397,12 +397,12 @@ void* childManager(void* args )
                         {
                             comma = 1;
                             sprintf(format+strlen(format), "[%d..%d, %d..%d]",
-                                    jj+1, jj+3, kk+1, kk+3);
+                                    jj*3+1, jj*3+3, kk*3+1, kk*3+3);
                         }
                         else
                         {
                             sprintf(format+strlen(format), ", [%d..%d, %d..%d]",
-                                    jj+1, jj+3, kk+1, kk+3);
+                                    jj*3+1, jj*3+3, kk*3+1, kk*3+3);
                         }
                     }
 		            resetArray(region->numbers);

@@ -8,6 +8,8 @@ EXEC1 = mssv
 OBJ1 = mssv.o 
 CFLAGS = -std=c99 -g -pthread -D _XOPEN_SOURCE=500 -lrt
 CC = gcc
+INPUT = ../testFiles/specTest.txt
+DELAY = 10
 
 
 # RULES + DEPENDENCIES
@@ -24,4 +26,4 @@ clean:
 	rm -f $(EXEC1) $(OBJ1) logfile
 
 run:
-	./$(EXEC1) ../testFiles/specTest.txt 10
+	./$(EXEC1) $(INPUT) $(DELAY)

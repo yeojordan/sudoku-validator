@@ -23,10 +23,7 @@ int main (int argc, char* argv[])
     // Generate random maxDelay
     srand((unsigned) time(NULL));
 
-printf("MAXDELAY :%d\n", maxDelay);
     maxDelay = rand() % maxDelay;
-
-printf("MAXDELAY :%d\n", maxDelay);
 
     // Create shared memory
     initMemory( &buff1FD, &buff2FD, &counterFD, &semFD, &regionFD, &resFD);
@@ -208,13 +205,13 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
     {
         //printf("Parent Waiting for Children\n");
         sem_wait(&(semaphores[1])); // Lock child
-        sem_wait(&(semaphores[0])); // Lock mutex
+        //sem_wait(&(semaphores[0])); // Lock mutex
         if ( *resourceCount == 0)
         {
             done = TRUE;
             printf("DONE\n");
         }
-        sem_post(&(semaphores[0])); // Unlock mutex
+        //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child
 
     }
@@ -468,10 +465,10 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 
         // Child signals it is finished by incremented resourceCount
         sem_wait(&(semaphores[1])); // Lock child
-        sem_wait(&(semaphores[0])); // Lock mutex
+        //sem_wait(&(semaphores[0])); // Lock mutex
             //printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
             *resourceCount = *resourceCount - 1;
-        sem_post(&(semaphores[0])); // Unlock mutex
+        //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child
 
 }

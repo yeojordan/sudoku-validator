@@ -37,7 +37,7 @@ void readFile(char* inputFile, int rows, int cols, int***buffer);
 void writeFile(Region* region, char* format);
 void resetArray(int numbers[]);
 int checkValid(int numbers[]);
-void parentManager(pthread_t threads[] );
+void parentManager(void);
 void* childManager(void* args );
 void initMemory( int*** buff1, int** buff2, int** counter, Region** regions);
 void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,

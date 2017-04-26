@@ -23,10 +23,7 @@ int main (int argc, char* argv[])
     // Generate random maxDelay
     srand((unsigned) time(NULL));
 
-printf("MAXDELAY :%d\n", maxDelay);
     maxDelay = rand() % maxDelay;
-
-printf("MAXDELAY :%d\n", maxDelay);
 
     // Create shared memory
     initMemory( &buff1FD, &buff2FD, &counterFD, &semFD, &regionFD, &resFD);
@@ -60,7 +57,7 @@ printf("MAXDELAY :%d\n", maxDelay);
     *resourceCount = 0;
 
     // Create child processes for
-    while( processNum < 11 && pid != 0 )
+    while( processNum < NUMPROCESSES && pid != 0 )
     {
         signal(SIGCHLD, SIG_IGN); // Kill zombie processNum-1
         pid = fork();
@@ -130,11 +127,7 @@ void readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols])
         for ( j = 0; j < cols; j++ )
         {
             fscanf( inStrm, "%d", &(*(buffer))[i][j] );
-
-            // DEBUGGING
-            printf("%d ", (*buffer)[i][j]);
         }
-        printf("\n");
     }
 
     fclose(inStrm); // Close file
@@ -212,18 +205,18 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
     {
         //printf("Parent Waiting for Children\n");
         sem_wait(&(semaphores[1])); // Lock child
-        sem_wait(&(semaphores[0])); // Lock mutex
+        //sem_wait(&(semaphores[0])); // Lock mutex
         if ( *resourceCount == 0)
         {
             done = TRUE;
             printf("DONE\n");
         }
-        sem_post(&(semaphores[0])); // Unlock mutex
+        //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child
 
     }
 
-    for(int ii = 0; ii < 11; ii++)
+    for(int ii = 0; ii < NUMPROCESSES; ii++)
     {
         sem_wait(&(semaphores[0])); //Lock mutex
         if (region[ii].type == ROW)
@@ -302,7 +295,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
                         int processNum, int *numbers, int maxDelay )
 {
     char format[500];
-    int numValid;
+    int numValid, comma = 0;
 
 	    if( processNum <= 9) // Check a row in buffer1
         {
@@ -357,14 +350,29 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 	            }
                 else
                 {
-                    sprintf(format + strlen(format), "%d, ", nn+1);
+                    if (comma == 0)
+                    {
+                        comma = 1;
+                        sprintf(format + strlen(format), "%d", nn+1);
+                    }
+                    else
+                    {
+                        sprintf(format + strlen(format), ", %d ", nn+1);
+                    }
                 }
 
 		        resetArray(numbers);
 	        }
 
             sleep(maxDelay);
-	        sprintf(format + strlen(format), "are invalid\n");
+            if (validCol == 8)
+            {
+	            sprintf(format + strlen(format), " is invalid\n");
+            }
+            else
+            {
+	            sprintf(format + strlen(format), "are invalid\n");
+            }
 			sem_wait(&(semaphores[0])); //Lock mutex
 
             // Update region struct
@@ -410,9 +418,17 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 	   	            }
                     else // Update string for log file
                     {
-                        sprintf(format+strlen(format), "[%d..%d, %d..%d], ",
-                                    jj+1, jj+3, kk+1, kk+3);
-
+                        if (comma == 0)
+                        {
+                            comma = 1; 
+                            sprintf(format+strlen(format), "[%d..%d, %d..%d]",
+                                        jj+1, jj+3, kk+1, kk+3);
+                        }
+                        else
+                        {
+                            sprintf(format+strlen(format), ", [%d..%d, %d..%d] ",
+                                        jj+1, jj+3, kk+1, kk+3);
+                        }
                     }
 		            resetArray(numbers);
 	            }
@@ -420,7 +436,14 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
             }
 
             sleep(maxDelay);
-		    sprintf(format+strlen(format), "is invalid\n");
+            if (validSub == 8)
+            {
+		        sprintf(format+strlen(format), " is invalid\n");
+            }
+            else
+            {
+		        sprintf(format+strlen(format), "are invalid\n");
+            }
             sem_wait(&(semaphores[0])); //Lock mutex
 
             // Update region struct
@@ -442,10 +465,10 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 
         // Child signals it is finished by incremented resourceCount
         sem_wait(&(semaphores[1])); // Lock child
-        sem_wait(&(semaphores[0])); // Lock mutex
+        //sem_wait(&(semaphores[0])); // Lock mutex
             //printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
             *resourceCount = *resourceCount - 1;
-        sem_post(&(semaphores[0])); // Unlock mutex
+        //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child
 
 }
@@ -479,13 +502,42 @@ void initMemory( int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
         exit(1);
     }
 
-    // Give shared memory blocks a size
-    ftruncate(*buff1FD, sizeof(int) * NINE * NINE);
-    ftruncate(*buff2FD, sizeof(int) * 11);
-    ftruncate(*counterFD, sizeof(int));
-    ftruncate(*semFD, sizeof(sem_t) * 2 );
-    ftruncate(*regionFD, sizeof(Region)*11);
-    ftruncate(*resFD, sizeof(int));
+    // Set size of shared memory constructs
+    if ( ftruncate(*buff1FD, sizeof(int) * NINE * NINE) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of buffer1" );
+        exit(1);       
+    }
+    
+    if ( ftruncate(*buff2FD, sizeof(int) * NUMPROCESSES) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of buffer2" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*counterFD, sizeof(int)) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of counter" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*semFD, sizeof(sem_t) * 2 ) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of semaphores" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*regionFD, sizeof(Region)*NUMPROCESSES) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of regions" ); 
+        exit(1);
+    }
+    
+    if ( ftruncate(*resFD, sizeof(int)) == -1 )
+    {   
+        fprintf( stderr, "Error setting size of resourceCount" ); 
+        exit(1);
+    }
 }
 
 /**
@@ -509,10 +561,10 @@ void mapMemory(int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
 {
     // Memory mapping
     *buff2Ptr = (int*) mmap(NULL, sizeof(int)*NINE*NINE, PROT_READ | PROT_WRITE, MAP_SHARED, *buff2FD, 0);
-    *buff1Ptr = mmap(NULL, sizeof(int)*11, PROT_READ | PROT_WRITE, MAP_SHARED, *buff1FD, 0);
+    *buff1Ptr = mmap(NULL, sizeof(int)*NUMPROCESSES, PROT_READ | PROT_WRITE, MAP_SHARED, *buff1FD, 0);
     *countPtr = (int*) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, *counterFD, 0);
     *semaphores = mmap(NULL, sizeof(sem_t) * 2, PROT_READ | PROT_WRITE, MAP_SHARED, *semFD, 0);
-    *region = mmap(NULL, sizeof(Region)* 11, PROT_READ | PROT_WRITE, MAP_SHARED, *regionFD, 0);
+    *region = mmap(NULL, sizeof(Region)*NUMPROCESSES, PROT_READ | PROT_WRITE, MAP_SHARED, *regionFD, 0);
     *resourceCount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, *resFD, 0);
 }
 
@@ -585,10 +637,10 @@ void cleanMemory(int (**buff1Ptr)[NINE][NINE], int **buff2Ptr, int** countPtr,
 
     // Unmap memory
     munmap(*buff1Ptr, sizeof(int)*NINE*NINE);
-    munmap(*buff2Ptr, sizeof(int)*11);
+    munmap(*buff2Ptr, sizeof(int)*NUMPROCESSES);
     munmap(*countPtr, sizeof(int));
     munmap(*semaphores, sizeof(sem_t)*2);
-    munmap(*region, sizeof(Region)*11);
+    munmap(*region, sizeof(Region)*NUMPROCESSES);
     munmap(*resourceCount, sizeof(int));
 
     // Unlink shared memory constructs

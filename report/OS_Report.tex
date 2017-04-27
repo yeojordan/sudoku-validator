@@ -171,9 +171,13 @@ Threads
 %--------------------------------------------------------
 % TESTING
 \section{Testing}
+\subsection{Method}
+To test each implementation of MSSV worked as intended multiple input files were used. With these input files, multiple delays were chosen as well. Input files of various 9x9 numbers were used. Input files were used that were valid, contained one error, contained multiple errors. Also tested were smaller grids than 9x9 and empty files. \\
+
+Testing was performed on the lab machines in various rooms of Building 314, Level 2. 
 
 \subsection{Errors}
-There are no known errors in the process MSSV and the thread MSSV. Care has been taken to ensure potential memory leaks are mitigated, by using the appropriate measures to free allocated memory. Memory leaks are not present in the testing of each MSSV currently performed.
+There are no known errors in the process MSSV and the thread MSSV. Care has been taken to ensure potential memory leaks are prevented, by using the appropriate measures to free allocated memory. Memory leaks are not present in the testing of each MSSV currently performed.
 
 \subsection{Input Files}
 
@@ -192,7 +196,7 @@ specTest\ =\
 
 \end{matrix}
 $$
-
+\vspace{1cm}
 $$
 testFail\ =\  
 \begin{matrix}
@@ -208,7 +212,7 @@ testFail\ =\
 
 \end{matrix}
 $$
-
+\vspace{1cm}
 $$
 multiFail\ =\  
 \begin{matrix}
@@ -280,6 +284,65 @@ row 9 is valid
 There are 21 valid sub-grids, and thus the solution is invalid
 \end{lstlisting}
 \subsection{Actual Results}
+
+
+	\begin{figure}[H]
+	\caption{Process: specTest}
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Pro_spec.png}}
+	\end{center}
+	\end{figure}
+	
+	
+	\begin{figure}[H]
+	\caption{Threads: specTest}		
+		\begin{center}
+			{
+				\includegraphics[height=0.25\textheight,width=1.0
+				\textwidth]{Thr_spec.png}}
+		\end{center}
+	\end{figure}
+
+	\begin{figure}[H]
+	\caption{Process: testFail}
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Pro_testF.png}}
+	\end{center}
+	\end{figure}
+
+
+	\begin{figure}[H]
+	\caption{Threads: testFail}		
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Thr_testF.png}}
+	\end{center}
+	\end{figure}
+
+	\begin{figure}[H]
+	\caption{Process: multiFail}
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Pro_multiF.png}}
+	\end{center}
+	\end{figure}
+
+
+	\begin{figure}[H]
+	\caption{Threads: multiFail}		
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Thr_multiF.png}}
+	\end{center}
+	\end{figure}
+
 \pagebreak
 
 %--------------------------------------------------------

@@ -1,0 +1,227 @@
+\documentclass[]{article}
+
+% PACKAGES
+\usepackage[a4paper, total={6in, 9in}]{geometry}
+%\usepackage[margin=1in]{geometry}
+\usepackage{fancyhdr}
+\usepackage[]{biblatex}
+\addbibresource{./references.bib}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{transparent}
+\usepackage{listings}
+\usepackage{color}
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
+%---------------------------------------------------------
+\lstdefinestyle{code}{
+	frame=single,
+	basicstyle=\ttfamily\color{red},
+	showstringspaces=false,
+	stringstyle=\color{green!33!black},
+	keywordstyle=\color{blue},
+	keywordstyle=[2]\sf\bf,
+	keywordstyle=[3]\sf\bf,
+	keywordstyle=[4]\sf\bf,
+	identifierstyle=\color{black},
+	rulecolor=\color{black},
+	commentstyle=\it\tt\color{gray}
+}
+
+\lstdefinestyle{java}{
+	style=code,
+	language=Java,
+	morekeywords={assert}
+}
+
+\lstset{style=code}
+%
+%\lstset{language=java}
+
+% HEADER AND FOOTER 
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Jordan Yeo - 17727626}
+\rhead{Assignment}
+%\chead{Team 8}
+\cfoot{\thepage}
+
+%---------------------------------------------------------
+% HOUSE KEEPING
+\graphicspath{ {./images/} }
+\setlength\parindent{0pt}
+%---------------------------------------------------------
+
+\begin{document}
+
+% TITLE PAGE
+%-------------------------------------------------------------------------------
+
+\begin{titlepage}
+	\begin{center}
+		\vspace*{1cm}
+		\LARGE\textbf{Operating Systems - Assignment}
+		\break
+		COMP2006
+		\vspace{1cm}
+		\break
+		\Large\textbf{Jordan Yeo \\17727626} 
+		\vspace{3cm}
+
+%		\begin{figure}[H]
+%		\begin{center}
+%			{
+%				\includegraphics[height=0.2\textheight,width=1.0
+%				\textwidth]{goodbye.png}}
+%		\end{center}
+%		\end{figure}
+		
+		\vspace{14.0cm}
+		\normalsize
+		Curtin University \\
+		Science and Engineering \\
+%		Perth, Australia \\
+%		October 2016
+		
+	\end{center}
+\end{titlepage}
+
+%-------------------------------------------------------------------------------
+\tableofcontents
+\pagebreak
+
+
+\pagenumbering{arabic} 
+\section*{Introduction}
+The following report is for Operating Systems Assignment for 2017. It will detail how mutual exclusion was achieved for processes and threads. Also the processes and threads that accessed shared resources. Submitted alongside this report is a README, source code and test inputs and outputs.
+
+%--------------------------------------------------------
+% PART A
+\section{Process MSSV}
+For this implementation of the solution, mutual exclusion is achieved by having the parent (consumer) wait for all child (producer) processes to complete execution before continuing. This waiting is implemented by having the parent wait for the semParent semaphore before acquiring mutex lock to check if all children have finished. Once a child completes execution is waits for the semParent semaphore before acquiring a mutex lock for itself to update a shared resource, indicating it is finished. 
+$$
+wait(semParent)
+$$
+$$
+wait(semMutex)\\
+$$
+$$
+\ \ \ \ \ \ \ \ \ \ //\ critical\ section\\ 
+$$
+$$
+signal(semMutex) \\
+$$
+$$
+signal(semParent)\\ \\
+$$
+\vspace{0.1cm}
+
+To ensure mutual exclusion for the shared resources (buffer1, buffer2 and counter) the child waited to acquire a mutex lock before entering its critical section to modify the shared resources. Since buffer1 was never modified and only read from this did not require a mutex lock to be obtained before reading. \\
+
+The semaphore required (semMutex and semParent), buffer1, buffer2 and counter were implemented using shared memory. The following POSIX shared memory functions were used to create shared memory, and the corresponding functions to close the shared memory: \\
+$$
+shm\_link()
+$$
+$$
+ftruncate()\\
+$$
+$$
+mmap()\\ 
+$$
+$$
+shm\_unlink() \\
+$$
+$$
+close()\\
+$$
+$$
+munmap()\\ 
+$$
+	
+	
+Zombie processes were killed with the use of signal(SIGCHILD, SIG\_IGN).
+
+
+
+
+%\pagebreak
+%--------------------------------------------------------
+% PART B
+\section{Thread MSSV}
+To achieve mutual exclusion in the multi-threaded program, the parent (consumer) must wait for all threads (producer) to complete execution. The parent uses \textit{pthread\_lock\_mutex()} to lock the mutex then peforms a \textit{pthread\_cond\_wait()} on a condition variable. The condition variable represents how many threads are still executing. Once the thread completes execution is acquires a mutex lock to alter the condition variable. \\
+
+
+%\textit{pthread\_mutex\_t} and \textit{pthread\_cond\_t} were used.
+In the thread MSSV the shared resources are declared as global variables. Threads have access to the variables declared global in the parent. Before a thread could access the shared resources it would first need to acquire a mutex lock. The function \textit{pthread\_lock\_mutex()} blocks the caller if the mutex is in use by another. It can then alter the shared resources, counter and buffer2, before releasing the mutex lock.
+
+Threads
+
+\pagebreak
+%--------------------------------------------------------
+% TESTING
+\section{Testing}
+
+\subsection{Errors}
+There are no known errors in the process MSSV and the thread MSSV. Care has been taken to ensure potential memory leaks are mitigated, by using the appropriate \textit{free()} and Memory leaks are 
+
+\pagebreak
+
+%--------------------------------------------------------
+% README
+\section{README}
+
+
+
+\subsection{Purpose}
+
+
+\subsection{Running the Program}
+To compile the C files into an executable format.
+
+\begin{lstlisting}
+	make
+\end{lstlisting}
+
+To run the program there are two options: \\
+
+Option 1
+
+\begin{lstlisting}
+	make run
+\end{lstlisting}
+
+This will only let you run with the preset parameters and they will need to be altered in the Makefile to test other \textit{input files} and \textit{delays} \\
+
+
+\begin{lstlisting}
+run:
+    ./$(EXEC1) ../testFiles/specTest.txt 10	
+\end{lstlisting}
+
+
+\pagebreak
+
+
+% REFERENCES
+\addcontentsline{toc}{section}{References}
+
+%\bibliographystyle{chicago}
+\nocite{*}
+\printbibliography
+%\bibliography{references}
+\pagebreak
+%--------------------------------------------------------
+% APPENDICES
+\section{Appendices}
+
+
+
+\end{document}          

@@ -1,0 +1,65 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.5 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist{nty}{nty}
+    \entry{ipc}{online}{}
+      \field{sortinit}{I}
+      \field{sortinithash}{25e99d37ba90f7c4fb20baf4e310faf3}
+      \field{labeltitlesource}{title}
+      \field{title}{Interprocess communication using POSIX Shared Memory in Linux}
+      \verb{url}
+      \verb https://www.softprayog.in/programming/interprocess-communication-using-posix-shared-memory-in-linux
+      \endverb
+      \warn{\item Datamodel: Entry 'ipc' (./references.bib): Invalid format '04-12-2017' of date field 'urldate' - ignoring}
+    \endentry
+    \entry{sem}{online}{}
+      \field{sortinit}{P}
+      \field{sortinithash}{c0a4896d0e424f9ca4d7f14f2b3428e7}
+      \field{labeltitlesource}{title}
+      \field{title}{POSIX Semaphores}
+      \verb{url}
+      \verb https://www.softprayog.in/programming/posix-semaphores
+      \endverb
+      \warn{\item Datamodel: Entry 'sem' (./references.bib): Invalid format '04-12-2017' of date field 'urldate' - ignoring}
+    \endentry
+    \entry{thrd}{online}{}
+      \field{sortinit}{P}
+      \field{sortinithash}{c0a4896d0e424f9ca4d7f14f2b3428e7}
+      \field{labeltitlesource}{title}
+      \field{title}{POSIX Threads Programming in C}
+      \verb{url}
+      \verb https://www.softprayog.in/programming/posix-threads-programming-in-c
+      \endverb
+      \warn{\item Datamodel: Entry 'thrd' (./references.bib): Invalid format '04-21-2017' of date field 'urldate' - ignoring}
+    \endentry
+    \entry{sync}{online}{}
+      \field{sortinit}{P}
+      \field{sortinithash}{c0a4896d0e424f9ca4d7f14f2b3428e7}
+      \field{labeltitlesource}{title}
+      \field{title}{POSIX Threads Synchronization in C}
+      \verb{url}
+      \verb https://www.softprayog.in/programming/posix-threads-synchronization-in-c
+      \endverb
+      \warn{\item Datamodel: Entry 'sync' (./references.bib): Invalid format '04-21-2017' of date field 'urldate' - ignoring}
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+

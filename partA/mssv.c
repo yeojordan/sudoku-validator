@@ -220,30 +220,15 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
         sem_wait(&(semaphores[0])); //Lock mutex
         if (region[ii].type == ROW)
         {
-            type = "row";
 		    position = region[ii].positionX;
-            if ( region[ii].valid == TRUE)
-	        {
-	            printf("Validation result from process ID-%d: %s %d is valid\n",
-                                      	region[ii].pid,type, position);
-          	}
-	      	else
-		    {
-        		printf("Validation result from process ID-%d: %s %d is invalid\n",
-		                   		region[ii].pid, type, position);
-	        }
-
-            /*
-            type = "invalid"
+            type = "invalid";
 
             if (region[ii].valid == TRUE)
             {
-                type = "valid"
+                type = "valid";
             }
             printf("Validation result from process ID-%d: row %d is %s\n",
-                                    region[ii].pid, position, type);
-             */
-
+                                    region[ii].pid, position, type); 
     	}
         else if (region[ii].type == COL)
         {

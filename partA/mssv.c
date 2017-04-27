@@ -65,14 +65,7 @@ int main (int argc, char* argv[])
         // Allow the parent to increment shared variable count
         if ( pid > 0)
         {
-            /*
-            DEBUGGING
-            printf("Child ID: %d, processNum: %d\n", pid, processNum);
-            */
             *resourceCount = *resourceCount + 1;
-            /*
-            printf("Parent's resourceCount: %dn", *resourceCount);
-             */
         }
         processNum++;
     }
@@ -96,8 +89,6 @@ int main (int argc, char* argv[])
         fprintf(stderr, "Unable to create child processes. Please run \"killall mssv\"\n");
     }
 }
-
-
 
 /******************************************************************************/
 
@@ -205,12 +196,10 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
     {
         //printf("Parent Waiting for Children\n");
         sem_wait(&(semaphores[1])); // Lock child
-        //sem_wait(&(semaphores[0])); // Lock mutex
         if ( *resourceCount == 0)
         {
             done = TRUE;
         }
-        //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child
 
     }
@@ -404,7 +393,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
                     {
                         if (comma == 0)
                         {
-                            comma = 1; 
+                            comma = 1;
                             sprintf(format+strlen(format), "[%d..%d, %d..%d]",
                                         jj*3+1, jj*3+3, kk*3+1, kk*3+3);
                         }
@@ -449,10 +438,7 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
 
         // Child signals it is finished by incremented resourceCount
         sem_wait(&(semaphores[1])); // Lock child
-        //sem_wait(&(semaphores[0])); // Lock mutex
-            //printf("I'm done! pid-%d resCount = %d\n", getpid(), (*resourceCount)-1);
             *resourceCount = *resourceCount - 1;
-        //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child
 
 }
@@ -488,38 +474,38 @@ void initMemory( int* buff1FD, int* buff2FD, int* counterFD, int* semFD,
 
     // Set size of shared memory constructs
     if ( ftruncate(*buff1FD, sizeof(int) * NINE * NINE) == -1 )
-    {   
+    {
         fprintf( stderr, "Error setting size of buffer1" );
-        exit(1);       
+        exit(1);
     }
-    
+
     if ( ftruncate(*buff2FD, sizeof(int) * NUMPROCESSES) == -1 )
-    {   
-        fprintf( stderr, "Error setting size of buffer2" ); 
+    {
+        fprintf( stderr, "Error setting size of buffer2" );
         exit(1);
     }
-    
+
     if ( ftruncate(*counterFD, sizeof(int)) == -1 )
-    {   
-        fprintf( stderr, "Error setting size of counter" ); 
+    {
+        fprintf( stderr, "Error setting size of counter" );
         exit(1);
     }
-    
+
     if ( ftruncate(*semFD, sizeof(sem_t) * 2 ) == -1 )
-    {   
-        fprintf( stderr, "Error setting size of semaphores" ); 
+    {
+        fprintf( stderr, "Error setting size of semaphores" );
         exit(1);
     }
-    
+
     if ( ftruncate(*regionFD, sizeof(Region)*NUMPROCESSES) == -1 )
-    {   
-        fprintf( stderr, "Error setting size of regions" ); 
+    {
+        fprintf( stderr, "Error setting size of regions" );
         exit(1);
     }
-    
+
     if ( ftruncate(*resFD, sizeof(int)) == -1 )
-    {   
-        fprintf( stderr, "Error setting size of resourceCount" ); 
+    {
+        fprintf( stderr, "Error setting size of resourceCount" );
         exit(1);
     }
 }

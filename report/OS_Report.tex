@@ -13,6 +13,8 @@
 \usepackage{transparent}
 \usepackage{listings}
 \usepackage{color}
+\usepackage{amsmath}
+\usepackage{color,soul}
 \hypersetup{
 	colorlinks,
 	citecolor=black,
@@ -23,7 +25,8 @@
 %---------------------------------------------------------
 \lstdefinestyle{code}{
 	frame=single,
-	basicstyle=\ttfamily\color{red},
+    basicstyle=\ttfamily,
+%   \color{red},
 	showstringspaces=false,
 	stringstyle=\color{green!33!black},
 	keywordstyle=\color{blue},
@@ -168,9 +171,177 @@ Threads
 %--------------------------------------------------------
 % TESTING
 \section{Testing}
+\subsection{Method}
+To test each implementation of MSSV worked as intended multiple input files were used. With these input files, multiple delays were chosen as well. Input files of various 9x9 numbers were used. Input files were used that were valid, contained one error, contained multiple errors. Also tested were smaller grids than 9x9 and empty files. \\
+
+Testing was performed on the lab machines in various rooms of Building 314, Level 2. 
 
 \subsection{Errors}
-There are no known errors in the process MSSV and the thread MSSV. Care has been taken to ensure potential memory leaks are mitigated, by using the appropriate \textit{free()} and Memory leaks are 
+There are no known errors in the process MSSV and the thread MSSV. Care has been taken to ensure potential memory leaks are prevented, by using the appropriate measures to free allocated memory. Memory leaks are not present in the testing of each MSSV currently performed.
+
+\subsection{Input Files}
+
+$$
+specTest\ =\  
+\begin{matrix}
+6 & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
+5 & 1 & 9 & 7 & 2 & 8 & 6 & 3 & 4 \\
+8 & 3 & 7 & 6 & 1 & 4 & 2 & 9 & 5 \\
+1 & 4 & 3 & 8 & 6 & 5 & 7 & 2 & 9 \\
+9 & 5 & 8 & 2 & 4 & 7 & 3 & 6 & 1 \\ 
+7 & 6 & 2 & 3 & 9 & 1 & 4 & 5 & 8 \\
+3 & 7 & 1 & 9 & 5 & 6 & 8 & 4 & 2 \\
+4 & 9 & 6 & 1 & 8 & 2 & 5 & 7 & 3 \\
+2 & 8 & 5 & 4 & 7 & 3 & 9 & 1 & 6
+
+\end{matrix}
+$$
+\vspace{1cm}
+$$
+testFail\ =\  
+\begin{matrix}
+2 & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
+5 & 1 & 9 & 7 & 2 & 8 & 6 & 3 & 4 \\
+8 & 3 & 7 & 6 & 1 & 4 & 2 & 9 & 5 \\
+1 & 4 & 3 & 8 & 6 & 5 & 7 & 2 & 9 \\
+9 & 5 & 8 & 2 & 4 & 7 & 3 & 6 & 1 \\ 
+7 & 6 & 2 & 3 & 9 & 1 & 4 & 5 & 8 \\
+3 & 7 & 1 & 9 & 5 & 6 & 8 & 4 & 2 \\
+4 & 9 & 6 & 1 & 8 & 2 & 5 & 7 & 3 \\
+2 & 8 & 5 & 4 & 7 & 3 & 9 & 1 & 6
+
+\end{matrix}
+$$
+\vspace{1cm}
+$$
+multiFail\ =\  
+\begin{matrix}
+2 & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
+5 & 1 & 9 & 7 & 2 & 8 & 6 & 3 & 4 \\
+8 & 3 & 7 & 6 & 1 & 4 & 2 & 9 & 5 \\
+1 & 4 & 3 & 8 & 6 & 5 & 7 & 2 & 9 \\
+9 & 5 & 8 & 2 & 4 & 7 & 3 & 6 & 3 \\ 
+7 & 6 & 2 & 3 & 9 & 1 & 4 & 5 & 8 \\
+3 & 7 & 1 & 9 & 5 & 6 & 8 & 4 & 2 \\
+4 & 9 & 6 & 1 & 8 & 2 & 5 & 7 & 3 \\
+2 & 8 & 5 & 4 & 7 & 3 & 9 & 1 & 6
+
+\end{matrix}
+$$
+
+\break
+\subsection{Expected Results}
+\textit{specTest}
+
+\begin{lstlisting}
+row 1 is valid
+row 2 is valid
+row 3 is valid
+row 4 is valid
+row 5 is valid
+row 6 is valid
+row 7 is valid
+row 8 is valid
+row 9 is valid
+9 out of 9 columns are valid
+9 out of 9 sub-grids are valid
+
+There are 27 valid sub-grids, and thus the solution is valid
+\end{lstlisting}
+\vspace{1cm}
+\textit{testFail}
+\begin{lstlisting}
+row 1 is invalid
+row 2 is valid
+row 3 is valid
+row 4 is valid
+row 5 is valid
+row 6 is valid
+row 7 is valid
+row 8 is valid
+row 9 is valid
+8 out of 9 columns are valid
+8 out of 9 sub-grids are valid
+
+There are 24 valid sub-grids, and thus the solution is invalid
+\end{lstlisting}
+
+\vspace{1cm}
+\textit{multiFail}
+\begin{lstlisting}
+row 1 is invalid
+row 2 is valid
+row 3 is valid
+row 4 is valid
+row 5 is invalid
+row 6 is valid
+row 7 is valid
+row 8 is valid
+row 9 is valid
+7 out of 9 columns are valid
+7 out of 9 sub-grids are valid
+
+There are 21 valid sub-grids, and thus the solution is invalid
+\end{lstlisting}
+\subsection{Actual Results}
+
+
+	\begin{figure}[H]
+	\caption{Processes: specTest}
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Pro_spec.png}}
+	\end{center}
+	\end{figure}
+	
+	
+	\begin{figure}[H]
+	\caption{Threads: specTest}		
+		\begin{center}
+			{
+				\includegraphics[height=0.25\textheight,width=1.0
+				\textwidth]{Thr_spec.png}}
+		\end{center}
+	\end{figure}
+
+	\begin{figure}[H]
+	\caption{Processes: testFail}
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Pro_testF.png}}
+	\end{center}
+	\end{figure}
+
+
+	\begin{figure}[H]
+	\caption{Threads: testFail}		
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Thr_testF.png}}
+	\end{center}
+	\end{figure}
+
+	\begin{figure}[H]
+	\caption{Processes: multiFail}
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Pro_multiF.png}}
+	\end{center}
+	\end{figure}
+
+
+	\begin{figure}[H]
+	\caption{Threads: multiFail}		
+	\begin{center}
+		{
+			\includegraphics[height=0.25\textheight,width=1.0
+			\textwidth]{Thr_multiF.png}}
+	\end{center}
+	\end{figure}
 
 \pagebreak
 
@@ -181,7 +352,7 @@ There are no known errors in the process MSSV and the thread MSSV. Care has been
 
 
 \subsection{Purpose}
-
+The program validates an input file containing a sudoku solution. There are two versions. One utilising processes and the other utilising threads.
 
 \subsection{Running the Program}
 To compile the C files into an executable format.
@@ -190,22 +361,46 @@ To compile the C files into an executable format.
 	make
 \end{lstlisting}
 
-To run the program there are two options: \\
+To run the program \\
 
-Option 1
 
 \begin{lstlisting}
-	make run
+	make run 
 \end{lstlisting}
 
 This will only let you run with the preset parameters and they will need to be altered in the Makefile to test other \textit{input files} and \textit{delays} \\
 
 
 \begin{lstlisting}
-run:
-    ./$(EXEC1) ../testFiles/specTest.txt 10	
+INPUT: ../testFiles/specTest.txt
+DELAY: 10
 \end{lstlisting}
 
+Between each time the program is run, the following command should be entered and executed. This is to delete the logfile produced from an invalid test file.
+
+\begin{lstlisting}
+	make clean
+\end{lstlisting}
+
+\subsection{Files}
+partA
+\begin{itemize}
+	\item Makefile
+	\item mssv.c
+	\item mssv.h
+\end{itemize}
+
+partB
+\begin{itemize}
+	\item Makefile
+	\item mssv.c
+	\item mssv.h
+\end{itemize}
+
+testFiles
+\begin{itemize}
+	\item test files
+\end{itemize}
 
 \pagebreak
 

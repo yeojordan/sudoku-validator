@@ -5,7 +5,7 @@
 
 # MAKE VARIABLES
 EXEC1 = mssv
-OBJ1 = mssv.o 
+OBJ1 = mssv.o
 CFLAGS = -std=c99 -pthread -D _XOPEN_SOURCE=500 -lrt
 CC = gcc
 INPUT = ../testFiles/specTest.txt
@@ -17,9 +17,6 @@ $(EXEC1) : $(OBJ1)
 
 mssv.o : mssv.c mssv.h #fileIO.h
 	$(CC) -c mssv.c $(CFLAGS)
-
-#fileIO.o : fileIO.c fileIO.h
-#	$(CC) -c fileIO.c $(CFLAGS)
 
 clean:
 	rm -f $(EXEC1) $(OBJ1) logfile

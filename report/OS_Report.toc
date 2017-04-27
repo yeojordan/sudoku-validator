@@ -8,12 +8,20 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {3.1}Errors}{3}{subsection.3.1}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4}README}{4}{section.4}
+\contentsline {subsection}{\numberline {3.2}Input Files}{3}{subsection.3.2}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.1}Purpose}{4}{subsection.4.1}
+\contentsline {subsection}{\numberline {3.3}Expected Results}{4}{subsection.3.3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.2}Running the Program}{4}{subsection.4.2}
+\contentsline {subsection}{\numberline {3.4}Actual Results}{4}{subsection.3.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{References}{5}{lstnumber.-3.2}
+\contentsline {section}{\numberline {4}README}{5}{section.4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5}Appendices}{6}{section.5}
+\contentsline {subsection}{\numberline {4.1}Purpose}{5}{subsection.4.1}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.2}Running the Program}{5}{subsection.4.2}
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.3}Files}{5}{subsection.4.3}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{References}{6}{subsection.4.3}
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5}Appendices}{7}{section.5}

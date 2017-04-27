@@ -9,7 +9,7 @@ OBJ1 = mssv.o
 CFLAGS = -std=c99 -pthread -D _XOPEN_SOURCE=500 -lrt
 CC = gcc
 INPUT = ../testFiles/specTest.txt
-DELAY = 10
+DELAY = 1
 
 # RULES + DEPENDENCIES
 $(EXEC1) : $(OBJ1)

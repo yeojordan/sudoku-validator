@@ -217,12 +217,12 @@ void parentManager()
 		    position = regions[ii].position;
             if ( regions[ii].valid == TRUE)
 	        {
-	            printf("Validation result from thread ID%d: %s %d is valid\n",
+	            printf("Validation result from thread ID-%u: %s %d is valid\n",
                                       	regions[ii].tid,type, position+1);
           	}
 	      	else
 		    {
-        		printf("Validation result from thread ID%d: %s %d is invalid\n",
+        		printf("Validation result from thread ID-%u: %s %d is invalid\n",
 		                   		regions[ii].tid, type, position+1);
 	        }
 
@@ -230,12 +230,12 @@ void parentManager()
         else if (regions[ii].type == COL)
         {
             type = "column";
-      		printf("Validation result from thread ID%d: %d out of 9 columns are valid\n",regions[ii].tid, regions[ii].count);
+      		printf("Validation result from thread ID-%u: %d out of 9 columns are valid\n",regions[ii].tid, regions[ii].count);
         }
         else
         {
             type = "sub-grid";
-	        printf("Validation result from process ID%d: %d out of 9 sub-grids are valid\n",regions[ii].tid, regions[ii].count);
+	        printf("Validation result from thread ID-%u: %d out of 9 sub-grids are valid\n",regions[ii].tid, regions[ii].count);
 
         }
 

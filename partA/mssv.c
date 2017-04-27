@@ -209,7 +209,6 @@ void parentManager(Region *region, sem_t *semaphores, int* countPtr,
         if ( *resourceCount == 0)
         {
             done = TRUE;
-            printf("DONE\n");
         }
         //sem_post(&(semaphores[0])); // Unlock mutex
         sem_post(&(semaphores[1])); // Unlock child

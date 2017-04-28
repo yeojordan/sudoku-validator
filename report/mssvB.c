@@ -214,29 +214,29 @@ void parentManager()
         if (regions[ii].type == ROW)
         {
             type = "row";
-		    position = regions[ii].position;
+            position = regions[ii].position;
             if ( regions[ii].valid == TRUE)
-	        {
-	            printf("Validation result from thread ID-%u: %s %d is valid\n",
+            {
+                printf("Validation result from thread ID-%u: %s %d is valid\n",
                                       	regions[ii].tid,type, position+1);
-          	}
-	      	else
-		    {
-        		printf("Validation result from thread ID-%u: %s %d is invalid\n",
+            }
+            else
+            {
+                printf("Validation result from thread ID-%u: %s %d is invalid\n",
 		                   		regions[ii].tid, type, position+1);
-	        }
-
-    	}
+            }
+        }
         else if (regions[ii].type == COL)
         {
             type = "column";
-      		printf("Validation result from thread ID-%u: %d out of 9 columns are valid\n",regions[ii].tid, regions[ii].count);
+            printf("Validation result from thread ID-%u: %d out of 9 columns are valid\n"
+                    ,regions[ii].tid, regions[ii].count);
         }
         else
         {
             type = "sub-grid";
-	        printf("Validation result from thread ID-%u: %d out of 9 sub-grids are valid\n",regions[ii].tid, regions[ii].count);
-
+            printf("Validation result from thread ID-%u: %d out of 9 sub-grids are valid\n"
+                    ,regions[ii].tid, regions[ii].count);
         }
 
         pthread_mutex_unlock(&mutex);
@@ -268,190 +268,188 @@ void* childManager(void* args )
     int threadNum = region->position;
     int comma = 0;
 
-	    if( region->type == ROW ) // Check row in buffer1
-        {
+    if( region->type == ROW ) // Check row in buffer1
+    {
 
-            // Check rows
-            for (int i = 0; i < NINE; i++)
+        // Check rows
+        for (int i = 0; i < NINE; i++)
+        {
+            // Update numbers array
+            region->numbers[((buff1)[threadNum][i])-1]++;
+        }
+
+        sleep(maxDelay); // Sleep
+        pthread_mutex_lock(&mutex); // Lock mutex
+
+        // Update region struct
+        region->tid = pthread_self();
+        region->valid = checkValid(region->numbers);
+
+        // Update buffer2
+        numValid = 0;
+        if (region->valid == TRUE)
+        {
+            numValid = 1;
+            region->count = numValid;
+        }
+        else // Write to log file
+        {
+            region->count = numValid;
+            sprintf(format, "row %d is invalid\n", threadNum+1);
+            writeFile((region), format);
+        }
+
+        buff2[threadNum] = numValid; // Update buffer2
+
+        *counter = *counter + numValid; // Update counter
+
+        pthread_mutex_unlock(&mutex); // Unlock mutex
+
+    }
+    else if( region->type == COL ) // Check all columns
+    {
+        sprintf(format, "column ");
+        int validCol = 0;
+        for ( int nn = 0; nn < NINE; nn++) // Iterate through each column
+        {
+            for(int ii = 0; ii < NINE; ii++) // Iterate through each row
             {
                 // Update numbers array
-                region->numbers[((buff1)[threadNum][i])-1]++;
+                region->numbers[((buff1)[ii][nn])-1]++;
             }
 
-            sleep(maxDelay); // Sleep
-            pthread_mutex_lock(&mutex); // Lock mutex
-
-            // Update region struct
-            region->tid = pthread_self();
-            region->valid = checkValid(region->numbers);
-
-            // Update buffer2
-            numValid = 0;
-            if (region->valid == TRUE)
+            // Check if the column is valid
+            if ( checkValid( region->numbers) == TRUE )
             {
-                numValid = 1;
-                region->count = numValid;
+	            validCol++;
             }
-            else // Write to log file
+            else
             {
-                region->count = numValid;
-                sprintf(format, "row %d is invalid\n", threadNum+1);
-                writeFile((region), format);
-            }
-
-            buff2[threadNum] = numValid; // Update buffer2
-
-            *counter = *counter + numValid; // Update counter
-
-            pthread_mutex_unlock(&mutex); // Unlock mutex
-
-        }
-        else if( region->type == COL ) // Check all columns
-        {
-            sprintf(format, "column ");
-	        int validCol = 0;
-	        for ( int nn = 0; nn < NINE; nn++) // Iterate through each column
-	        {
-	            for(int ii = 0; ii < NINE; ii++) // Iterate through each row
-   	            {
-                    // Update numbers array
-                    region->numbers[((buff1)[ii][nn])-1]++;
-	            }
-
-                // Check if the column is valid
-                if ( checkValid( region->numbers) == TRUE )
-	            {
-		            validCol++;
-	            }
+                if (comma == 0)
+                {
+                    comma = 1;
+                    sprintf(format + strlen(format), "%d", nn+1);
+                }
                 else
+                {
+                    sprintf(format + strlen(format), ", %d ", nn+1);
+                }
+            }
+            resetArray(region->numbers);
+        }
+
+        sleep(maxDelay);
+        if (validCol == 8)
+        {
+            sprintf(format + strlen(format), " is invalid\n");
+        }
+        else
+        {
+            sprintf(format + strlen(format), "are invalid\n");
+        }
+        pthread_mutex_lock(&mutex); // Lock mutex
+
+        // Update region struct
+        region->count = validCol;
+        region->tid = pthread_self();
+        if(validCol != 9)
+        {
+            writeFile((region), format);
+        }
+
+        numValid = region->count;
+
+        buff2[threadNum] = validCol; // Update buffer2
+
+        *counter = *counter + validCol; // Update counter
+
+        pthread_mutex_unlock(&mutex); // Unlock mutex
+    }
+    else if( region->type == SUB_GRID ) // Check all sub-grids
+    {
+        sprintf(format, "sub-grid ");
+
+        int validSub = 0;
+
+        // Iterate through each of the 9 3x3 sub-grid
+        for ( int jj = 0; jj < 3; jj++)
+        {
+            for (int kk = 0; kk < 3; kk++)
+            {
+                for (int ll = jj*3; ll < jj*3+3; ll++)
+                {
+                    for (int mm = kk*3; mm < kk*3+3; mm++)
+                    {
+                        // Update numbers array
+                        region->numbers[((buff1)[ll][mm])-1]++;
+                    }
+                }
+
+                if ( checkValid(region->numbers) == TRUE )
+                {
+                    validSub++;
+                }
+                else // Update string for log file
                 {
                     if (comma == 0)
                     {
                         comma = 1;
-                        sprintf(format + strlen(format), "%d", nn+1);
+                        sprintf(format+strlen(format), "[%d..%d, %d..%d]",
+                                jj*3+1, jj*3+3, kk*3+1, kk*3+3);
                     }
                     else
                     {
-                        sprintf(format + strlen(format), ", %d ", nn+1);
+                        sprintf(format+strlen(format), ", [%d..%d, %d..%d]",
+                                jj*3+1, jj*3+3, kk*3+1, kk*3+3);
                     }
                 }
-
-		        resetArray(region->numbers);
-
-	        }
-
-            sleep(maxDelay);
-	        if (validCol == 8)
-            {
-                sprintf(format + strlen(format), " is invalid\n");
-            }
-            else
-            {
-                sprintf(format + strlen(format), "are invalid\n");
-            }
-            pthread_mutex_lock(&mutex); // Lock mutex
-
-            // Update region struct
-            region->count = validCol;
-            region->tid = pthread_self();
-            if(validCol != 9)
-            {
-                writeFile((region), format);
+                resetArray(region->numbers);
             }
 
-            numValid = region->count;
-
-            buff2[threadNum] = validCol; // Update buffer2
-
-            *counter = *counter + validCol; // Update counter
-
-            pthread_mutex_unlock(&mutex); // Unlock mutex
         }
-        else if( region->type == SUB_GRID ) // Check all sub-grids
+
+        sleep(maxDelay);
+        if( validSub == 8)
         {
-            sprintf(format, "sub-grid ");
-
-            int validSub = 0;
-
-            // Iterate through each of the 9 3x3 sub-grid
-            for ( int jj = 0; jj < 3; jj++)
-            {
-                for (int kk = 0; kk < 3; kk++)
-	            {
-		            for (int ll = jj*3; ll < jj*3+3; ll++)
-    		        {
-		                for (int mm = kk*3; mm < kk*3+3; mm++)
-		                {
-                            // Update numbers array
-			                region->numbers[((buff1)[ll][mm])-1]++;
-		                }
-		            }
-
-	    	        if ( checkValid(region->numbers) == TRUE )
-	    	        {
-		                validSub++;
-	   	            }
-                    else // Update string for log file
-                    {
-                        if (comma == 0)
-                        {
-                            comma = 1;
-                            sprintf(format+strlen(format), "[%d..%d, %d..%d]",
-                                    jj*3+1, jj*3+3, kk*3+1, kk*3+3);
-                        }
-                        else
-                        {
-                            sprintf(format+strlen(format), ", [%d..%d, %d..%d]",
-                                    jj*3+1, jj*3+3, kk*3+1, kk*3+3);
-                        }
-                    }
-		            resetArray(region->numbers);
-	            }
-
-            }
-
-            sleep(maxDelay);
-            if( validSub == 8)
-            {
-		        sprintf(format+strlen(format), " is invalid\n");
-            }
-            else
-            {
-		        sprintf(format+strlen(format), " are invalid\n");
-            }
-            pthread_mutex_lock(&mutex); // Lock mutex
-
-            // Update region struct
-            region->count= validSub;
-            region->tid = pthread_self();
-
-            if(validSub != 9)
-            {
-                writeFile((region), format);
-            }
-
-            buff2[threadNum] = validSub; // Update buffer2
-
-            *counter = *counter + validSub; // Update counter
-
-            pthread_mutex_unlock(&mutex); // Unlock mutex
-
+            sprintf(format+strlen(format), " is invalid\n");
         }
-
-        // Child signals it is finished by incremented resourceCount
+        else
+        {
+            sprintf(format+strlen(format), " are invalid\n");
+        }
         pthread_mutex_lock(&mutex); // Lock mutex
 
-        while( inUse == 0)
+        // Update region struct
+        region->count= validSub;
+        region->tid = pthread_self();
+
+        if(validSub != 9)
         {
-            pthread_cond_wait(&use, &mutex);
+            writeFile((region), format);
         }
-        inUse--; // Decrease count of child processes running
-        if (inUse == 0)
-        {
-            pthread_cond_signal(&use);
-        }
+
+        buff2[threadNum] = validSub; // Update buffer2
+
+        *counter = *counter + validSub; // Update counter
+
         pthread_mutex_unlock(&mutex); // Unlock mutex
-        pthread_detach(pthread_self()); // Release resources
+
+    }
+
+    // Child signals it is finished by incremented resourceCount
+    pthread_mutex_lock(&mutex); // Lock mutex
+
+    while( inUse == 0)
+    {
+        pthread_cond_wait(&use, &mutex);
+    }
+    inUse--; // Decrease count of child processes running
+    if (inUse == 0)
+    {
+        pthread_cond_signal(&use);
+    }
+    pthread_mutex_unlock(&mutex); // Unlock mutex
+    pthread_detach(pthread_self()); // Release resources
 
 }
 

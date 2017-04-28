@@ -1,7 +1,7 @@
 \documentclass[]{article}
 
 % PACKAGES
-\usepackage[a4paper, total={6in, 9in}]{geometry}
+\usepackage[a4paper, total={6.5in, 9in}]{geometry}
 %\usepackage[margin=1in]{geometry}
 \usepackage{fancyhdr}
 \usepackage[]{biblatex}
@@ -38,13 +38,40 @@
 	commentstyle=\it\tt\color{gray}
 }
 
-\lstdefinestyle{java}{
-	style=code,
-	language=Java,
-	morekeywords={assert}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.99,0.99,0.99}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},  
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{blue},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\footnotesize,
+	breakatwhitespace=false,        
+	breaklines=true,                
+	captionpos=b,                    
+	keepspaces=true,                
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
 }
 
-\lstset{style=code}
+\lstset{style=mystyle}
+%
+%\lstdefinestyle{java}{
+%	style=code,
+%	language=Java,
+%	morekeywords={assert}
+%}
+%
+%\lstset{style=code}
 %
 %\lstset{language=java}
 
@@ -103,24 +130,19 @@
 
 
 \pagenumbering{arabic} 
+\addcontentsline{toc}{section}{Introduction}
 \section*{Introduction}
-The following report is for Operating Systems Assignment for 2017. It will detail how mutual exclusion was achieved for processes and threads. Also the processes and threads that accessed shared resources. Submitted alongside this report is a README, source code and test inputs and outputs.
+The following report is for the Operating Systems Assignment for 2017. It will detail how mutual exclusion was achieved for processes and threads. Also the processes and threads that accessed shared resources. Submitted alongside this report is a README, source code and test inputs and outputs.
 
 %--------------------------------------------------------
 % PART A
 \section{Process MSSV}
-For this implementation of the solution, mutual exclusion is achieved by having the parent (consumer) wait for all child (producer) processes to complete execution before continuing. This waiting is implemented by having the parent wait for the semParent semaphore before acquiring mutex lock to check if all children have finished. Once a child completes execution is waits for the semParent semaphore before acquiring a mutex lock for itself to update a shared resource, indicating it is finished. 
+For this implementation of the solution, mutual exclusion is achieved by having the parent (consumer) wait for all child (producer) processes to complete execution before continuing. This waiting is implemented by having the parent wait for the semParent semaphore before accessing the value of the shared variable representing the number of child processes finished. Once a child completes execution is waits for the semParent semaphore before acquiring a mutex lock for itself to update a shared resource, indicating it is finished. The parent is forced to wait until the value of the shared variable shows that all children are finished. 
 $$
 wait(semParent)
 $$
 $$
-wait(semMutex)\\
-$$
-$$
 \ \ \ \ \ \ \ \ \ \ //\ critical\ section\\ 
-$$
-$$
-signal(semMutex) \\
 $$
 $$
 signal(semParent)\\ \\
@@ -128,8 +150,18 @@ $$
 \vspace{0.1cm}
 
 To ensure mutual exclusion for the shared resources (buffer1, buffer2 and counter) the child waited to acquire a mutex lock before entering its critical section to modify the shared resources. Since buffer1 was never modified and only read from this did not require a mutex lock to be obtained before reading. \\
+$$
+wait(semMutex)
+$$
+$$
+\ \ \ \ \ \ \ \ \ \ //\ critical\ section\\ 
+$$
+$$
+signal(semMutex)\\ \\
+$$
+\vspace{0.1cm}
 
-The semaphore required (semMutex and semParent), buffer1, buffer2 and counter were implemented using shared memory. The following POSIX shared memory functions were used to create shared memory, and the corresponding functions to close the shared memory: \\
+The semaphores required (semMutex and semParent), buffer1, buffer2 and counter were implemented using shared memory. The following POSIX shared memory functions were used to create shared memory, and the corresponding functions to close the shared memory: \\
 $$
 shm\_link()
 $$
@@ -149,23 +181,36 @@ $$
 munmap()\\ 
 $$
 	
+\vspace{0.2cm}
 	
 Zombie processes were killed with the use of signal(SIGCHILD, SIG\_IGN).
-
-
 
 
 %\pagebreak
 %--------------------------------------------------------
 % PART B
 \section{Thread MSSV}
-To achieve mutual exclusion in the multi-threaded program, the parent (consumer) must wait for all threads (producer) to complete execution. The parent uses \textit{pthread\_lock\_mutex()} to lock the mutex then peforms a \textit{pthread\_cond\_wait()} on a condition variable. The condition variable represents how many threads are still executing. Once the thread completes execution is acquires a mutex lock to alter the condition variable. \\
+To achieve mutual exclusion in the multi-threaded program, the parent (consumer) must wait for all threads (producer) to complete execution. The parent uses \textit{pthread\_lock\_mutex()} to lock the mutex then performs a \textit{pthread\_cond\_wait()} on a condition variable. The condition variable represents how many threads are still executing. \\
 
+Once the thread completes execution, it acquires a mutex lock to alter the condition variable signaling it has finished its task. The thread also performs a conditional wait in the case where the parent is using the shared variable. \\
+$$
+pthread\_mutex\_lock(\&mutex )
+$$
+$$
+pthread\_cond\_wait(\&use, \&mutex)
+$$
+$$
+pthread\_cond\_signal(\&use);
+$$
+$$
+pthread\_mutex\_unlock(\&mutex)
+$$
+\vspace{0.2cm}
 
 %\textit{pthread\_mutex\_t} and \textit{pthread\_cond\_t} were used.
-In the thread MSSV the shared resources are declared as global variables. Threads have access to the variables declared global in the parent. Before a thread could access the shared resources it would first need to acquire a mutex lock. The function \textit{pthread\_lock\_mutex()} blocks the caller if the mutex is in use by another. It can then alter the shared resources, counter and buffer2, before releasing the mutex lock.
+In the thread MSSV the shared resources are declared as global variables. Threads have access to the variables declared global in the parent. Before a thread could access the shared resources it would first need to acquire a mutex lock. The function \textit{pthread\_lock\_mutex()} blocks the caller if the mutex is in use by another. It can then alter the shared resources, counter and buffer2, before releasing the mutex lock.\\
 
-Threads
+To allocate the memory for buffer1, buffer2, counter and regions \textit{malloc()} was used. The appropriate \textit{free()} calls were used to free the allocated memory. This was done to ensure memory leaks were not present in the operation of the program. 
 
 \pagebreak
 %--------------------------------------------------------
@@ -233,7 +278,7 @@ $$
 \subsection{Expected Results}
 \textit{specTest}
 
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 row 1 is valid
 row 2 is valid
 row 3 is valid
@@ -250,7 +295,7 @@ There are 27 valid sub-grids, and thus the solution is valid
 \end{lstlisting}
 \vspace{1cm}
 \textit{testFail}
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 row 1 is invalid
 row 2 is valid
 row 3 is valid
@@ -268,7 +313,7 @@ There are 24 valid sub-grids, and thus the solution is invalid
 
 \vspace{1cm}
 \textit{multiFail}
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 row 1 is invalid
 row 2 is valid
 row 3 is valid
@@ -357,28 +402,36 @@ The program validates an input file containing a sudoku solution. There are two 
 \subsection{Running the Program}
 To compile the C files into an executable format.
 
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 	make
 \end{lstlisting}
 
-To run the program \\
+To run the program there are two options.\\
+
+Option 1:
 
 
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 	make run 
 \end{lstlisting}
+\vspace{0.5cm}
+This will only let you run with the preset parameters and they will need to be altered in the Makefile to test other \textit{input files} and \textit{delays} 
 
-This will only let you run with the preset parameters and they will need to be altered in the Makefile to test other \textit{input files} and \textit{delays} \\
 
-
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 INPUT: ../testFiles/specTest.txt
 DELAY: 10
 \end{lstlisting}
+\vspace{0.5cm}
+Option 2: 
+\begin{lstlisting}[style=code]
+./mssv <inputFile> <delay>
+\end{lstlisting}
 
+\vspace{0.5cm}
 Between each time the program is run, the following command should be entered and executed. This is to delete the logfile produced from an invalid test file.
 
-\begin{lstlisting}
+\begin{lstlisting}[style=code]
 	make clean
 \end{lstlisting}
 
@@ -416,7 +469,22 @@ testFiles
 %--------------------------------------------------------
 % APPENDICES
 \section{Appendices}
-
-
+\subsection{Processes: mssv.c}
+\lstinputlisting[language=c]{./mssvA.c}
+\pagebreak
+\subsection{Processes: mssv.h}
+\lstinputlisting[language=c]{../partA/mssv.h}
+\pagebreak
+\subsection{Processes: Makefile}
+\lstinputlisting{../partA/Makefile}
+\pagebreak
+\subsection{Threads: mssv.c}
+\lstinputlisting[language=c]{./mssvB.c}
+\pagebreak
+\subsection{Threads: mssv.h}
+\lstinputlisting[language=c]{../partB/mssv.h}
+\pagebreak
+\subsection{Threads: Makefile}
+\lstinputlisting{../partB/Makefile}
 
 \end{document}          

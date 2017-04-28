@@ -20,11 +20,6 @@ int main (int argc, char* argv[])
     // Shared memory pointers
     int *buff2Ptr, *countPtr, *resourceCount, (*buff1Ptr)[NINE][NINE];
 
-    // Generate random maxDelay
-    srand((unsigned) time(NULL));
-
-    maxDelay = rand() % maxDelay;
-
     // Create shared memory
     initMemory( &buff1FD, &buff2FD, &counterFD, &semFD, &regionFD, &resFD);
 
@@ -270,6 +265,10 @@ void childManager(Region *region, sem_t *semaphores, int (*buff1Ptr)[NINE][NINE]
     char format[500];
     int numValid, comma = 0;
 
+    // Generate random maxDelay
+    srand((unsigned) getpid());
+
+    maxDelay = (rand() % maxDelay) + 1;
 	    if( processNum <= 9) // Check a row in buffer1
         {
             for (int i = 0; i < NINE; i++)

@@ -110,7 +110,7 @@ void cleanMemory()
 void readFile(char* inputFile, int rows, int cols, int***buffer )
 {
     FILE* inStrm;
-    int i, j;
+    int i, j, count = 0;
 
     inStrm = fopen(inputFile, "r"); // Open file for reading
 
@@ -125,10 +125,17 @@ void readFile(char* inputFile, int rows, int cols, int***buffer )
     {
         for ( j = 0; j < cols; j++ )
         {
-            fscanf( inStrm, "%d", &(*(buffer))[i][j] );
+            count += fscanf( inStrm, "%d", &(*(buffer))[i][j] );
         }
     }
     fclose(inStrm); // Close file
+
+    if(count != NINE*NINE)
+    {
+        fprint(stderr, "Invalid number of parameters read from file\n");
+        cleanMemory();
+        exit(1);
+    }
 }
 
 /**

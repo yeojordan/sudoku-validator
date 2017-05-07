@@ -137,7 +137,7 @@ The following report is for the Operating Systems Assignment for 2017. It will d
 %--------------------------------------------------------
 % PART A
 \section{Process MSSV}
-For this implementation of the solution, mutual exclusion is achieved by having the parent (consumer) wait for all child (producer) processes to complete execution before continuing. This waiting is implemented by having the parent wait for the semParent semaphore before accessing the value of the shared variable representing the number of child processes finished. Once a child completes execution is waits for the semParent semaphore before acquiring a mutex lock for itself to update a shared resource, indicating it is finished. The parent is forced to wait until the value of the shared variable shows that all children are finished. 
+For this implementation of the solution, mutual exclusion is achieved by having the parent (consumer) wait for all child (producer) processes to complete execution before continuing. This waiting is implemented by having the parent wait for the semParent semaphore before accessing the shared variable, representing the number of child processes finished. Once the parent has finished creating children it will only be reading the value of the shared variable. The semParent semaphore is to prevent the critical section problem. So the child does not write to the variable as the parent reads. Once a child completes execution it waits for the semParent semaphore before acquiring a mutex lock to update a shared resource, indicating it is finished. The parent is forced to wait until the value of the shared variable shows that all children are finished. 
 $$
 wait(semParent)
 $$
@@ -192,7 +192,7 @@ Zombie processes were killed with the use of signal(SIGCHILD, SIG\_IGN).
 \section{Thread MSSV}
 To achieve mutual exclusion in the multi-threaded program, the parent (consumer) must wait for all threads (producer) to complete execution. The parent uses \textit{pthread\_lock\_mutex()} to lock the mutex then performs a \textit{pthread\_cond\_wait()} on a condition variable. The condition variable represents how many threads are still executing. \\
 
-Once the thread completes execution, it acquires a mutex lock to alter the condition variable signaling it has finished its task. The thread also performs a conditional wait in the case where the parent is using the shared variable. \\
+Once a thread completes execution, it acquires a mutex lock to alter the condition variable signaling it has finished its task. The thread also performs a conditional wait in the case where the parent is using the shared variable. \\
 $$
 pthread\_mutex\_lock(\&mutex )
 $$
@@ -208,7 +208,7 @@ $$
 \vspace{0.2cm}
 
 %\textit{pthread\_mutex\_t} and \textit{pthread\_cond\_t} were used.
-In the thread MSSV the shared resources are declared as global variables. Threads have access to the variables declared global in the parent. Before a thread could access the shared resources it would first need to acquire a mutex lock. The function \textit{pthread\_lock\_mutex()} blocks the caller if the mutex is in use by another. It can then alter the shared resources, counter and buffer2, before releasing the mutex lock.\\
+In thread MSSV the shared resources are declared as global variables. Threads have access to the variables declared global in the parent. Before a thread could access the shared resources it would first need to acquire a mutex lock. The function \textit{pthread\_lock\_mutex()} blocks the caller if the mutex is in use by another. It can then alter the shared resources, counter and buffer2, before releasing the mutex lock.\\
 
 To allocate the memory for buffer1, buffer2, counter and regions \textit{malloc()} was used. The appropriate \textit{free()} calls were used to free the allocated memory. This was done to ensure memory leaks were not present in the operation of the program. 
 
@@ -245,7 +245,7 @@ $$
 $$
 testFail\ =\  
 \begin{matrix}
-2 & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
+\fbox{2} & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
 5 & 1 & 9 & 7 & 2 & 8 & 6 & 3 & 4 \\
 8 & 3 & 7 & 6 & 1 & 4 & 2 & 9 & 5 \\
 1 & 4 & 3 & 8 & 6 & 5 & 7 & 2 & 9 \\
@@ -261,11 +261,11 @@ $$
 $$
 multiFail\ =\  
 \begin{matrix}
-2 & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
+\fbox{2} & 2 & 4 & 5 & 3 & 9 & 1 & 8 & 7 \\
 5 & 1 & 9 & 7 & 2 & 8 & 6 & 3 & 4 \\
 8 & 3 & 7 & 6 & 1 & 4 & 2 & 9 & 5 \\
 1 & 4 & 3 & 8 & 6 & 5 & 7 & 2 & 9 \\
-9 & 5 & 8 & 2 & 4 & 7 & 3 & 6 & 3 \\ 
+9 & 5 & 8 & 2 & 4 & 7 & 3 & 6 & \fbox{3} \\ 
 7 & 6 & 2 & 3 & 9 & 1 & 4 & 5 & 8 \\
 3 & 7 & 1 & 9 & 5 & 6 & 8 & 4 & 2 \\
 4 & 9 & 6 & 1 & 8 & 2 & 5 & 7 & 3 \\

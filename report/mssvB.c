@@ -18,10 +18,6 @@ int main (int argc, char* argv[])
     // Variables
     pthread_t threads[11];
 
-    // Generate random maxDelay
-    srand((unsigned) time(NULL));
-    maxDelay = rand() % maxDelay;
-
     // Allocate  memory
     initMemory( &buff1, &buff2, &counter, &regions);
 
@@ -267,6 +263,11 @@ void* childManager(void* args )
     Region* region = ((Region*)(args));
     int threadNum = region->position;
     int comma = 0;
+    int delay;
+
+    // Generate random maxDelay
+    srand((unsigned) pthread_self() );
+    delay = ( rand() % delay ) + 1;
 
     if( region->type == ROW ) // Check row in buffer1
     {
@@ -278,7 +279,7 @@ void* childManager(void* args )
             region->numbers[((buff1)[threadNum][i])-1]++;
         }
 
-        sleep(maxDelay); // Sleep
+        sleep(delay); // Sleep
         pthread_mutex_lock(&mutex); // Lock mutex
 
         // Update region struct
@@ -338,7 +339,7 @@ void* childManager(void* args )
             resetArray(region->numbers);
         }
 
-        sleep(maxDelay);
+        sleep(delay);
         if (validCol == 8)
         {
             sprintf(format + strlen(format), " is invalid\n");
@@ -408,7 +409,7 @@ void* childManager(void* args )
 
         }
 
-        sleep(maxDelay);
+        sleep(delay);
         if( validSub == 8)
         {
             sprintf(format+strlen(format), " is invalid\n");

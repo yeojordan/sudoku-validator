@@ -118,7 +118,7 @@ void readFile(char* inputFile, int rows, int cols, int (*buffer)[rows][cols])
 
     fclose(inStrm); // Close file
     
-    if(count != 81)
+    if(count != NINE*NINE)
     {
         fprintf(stderr, "Incorrect number of parameters read from file\n");
         exit(1);    
